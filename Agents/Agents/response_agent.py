@@ -48,8 +48,8 @@ FILTERS:
 RECOMMENDED VIDEOS:
 {recommended_videos}
 
-Github Agent Summary:
-{github_response}
+Recommended GitHub Repositories:
+{recommended_repos}
 
 Kaggle Notebooks Agent Response:
 {kaggle_notebooks_response}
@@ -158,28 +158,34 @@ class ResponseAgent:
         # videos = context.get("agent_outputs").get("youtube_recommender_agent") or []
         print(f"line:154")
         video_text = ""
-        for i, v in enumerate(videos.get("items"), start=1):
-            video_text += (
-                f"{i}. {v.get('video_title')}\n"
-                f"   Channel: {v.get('channel_name')}\n"
-                f"   Link: {v.get('video_url')}\n\n"
-            )
-        # print(f"line:162")
-        # pprint(f"\n\n[RESPONSE AGENT] Prepared video text:\n{video_text}\n\n")
-        # print(f"line:164")    
-        # # prepare the github repos 
-        # repos = context.get("recommended_repos") or []
-        # repo_text = ""
-        # if repos:
-        #     for i,repo in enumerate(repos[:10],start=1):
-        #         repo_text += (
-        #             f"{i}. {repo.get('name')}\n"
-        #             f"   Description: {repo.get('description') or 'No description'}\n"
-        #             f"   Owner: {(repo.get('owner') or {}).get('username', 'Unknown')}\n"
-        #             f"   Stars: {(repo.get('stats') or {}).get('stars', 'N/A')}\n"
-        #             f"   Language: {(repo.get('tech') or {}).get('language') or 'N/A'}\n"
-        #             f"   Link: {repo.get('url')}\n\n"
-        #         )
+        if videos:
+            for i, v in enumerate(videos.get("items"), start=1):
+                video_text += (
+                    f"{i}. {v.get('video_title')}\n"
+                    f"   Channel: {v.get('channel_name')}\n"
+                    f"   Link: {v.get('video_url')}\n\n"
+                )
+        print(f"line:162")
+        pprint(f"\n\n[RESPONSE AGENT] Prepared video text:\n{video_text}\n\n")
+        print(f"line:164")    
+        
+        # prepare the github repos 
+        repositories_cache = tool_cache.get_full(user_id=context.get("user_id"), tool_id="github_repo_fetcher") or {}
+        print(f"\nline:168 repositories_cache: {repositories_cache}\n")
+        repos = repositories_cache.get("result")
+        repo_text = ""
+        if repos:
+            for i,repo in enumerate(repos.get("items"),start=1):
+                repo_text += (
+                    f"{i}. {repo.get('name')}\n"
+                    f"   Description: {repo.get('description') or 'No description'}\n"
+                    f"   Owner: {(repo.get('owner') or {}).get('username', 'Unknown')}\n"
+                    f"   Stars: {(repo.get('stats') or {}).get('stars', 'N/A')}\n"
+                    f"   Language: {(repo.get('tech') or {}).get('language') or 'N/A'}\n"
+                    f"   Link: {repo.get('url')}\n\n"
+                )
+                
+            print(f"\n\n[RESPONSE AGENT] Prepared repo text:\n{repo_text}\n\n")
             
         # print(f"line:179")
         # # for kaggle notebooks
@@ -252,13 +258,13 @@ class ResponseAgent:
             "goals": context.get("goals"),
             "filters": context.get("filters"),
             "recommended_videos": video_text or "None",
-            "recommended_repos": "None",
+            "recommended_repos": repo_text or "None",
             "recommended_kaggle_notebooks": "None",
             "recommended_kaggle_datasets": "None",
             "kaggle_datasets_response":context.get("kaggle_datasets_response") or None,
             "kaggle_notebooks_response":context.get("kaggle_notebooks_response") or None,
             "recommended_books": "None",
-            "github_response": context.get("github_response") or "None",
+            "github_response":"None",
             "open_library_response": context.get("open_library_response") or "None",
             "open_library_status": context.get("open_library_status") or "None",
             "open_library_error": context.get("open_library_error") or "None",

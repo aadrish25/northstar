@@ -81,38 +81,37 @@ class GithubAgent:
         self.chain = chain
         
     async def run(self,context:dict):
-        response = await self.chain.ainvoke({
-            "user_input":context.get("user_input"),
-            "chat_history":context.get("chat_history"),
-            "collected_repos":context.get("collected_repos") or context.get("github_items"),
-            "goals":context.get("goals"),
-        })
+        # response = await self.chain.ainvoke({
+        #     "user_input":context.get("user_input"),
+        #     "chat_history":context.get("chat_history"),
+        #     "collected_repos":context.get("collected_repos") or context.get("github_items"),
+        #     "goals":context.get("goals"),
+        # })
         
-        github_summary = output_parser.parse(response['text'])
+        # github_summary = output_parser.parse(response['text'])
         
-        items = context.get("github_items") or context.get("collected_repos") or []
-        github_error = context.get("github_error")
+        # items = context.get("github_items") or context.get("collected_repos") or []
+        # github_error = context.get("github_error")
 
-        if github_error:
-            github_status = "error"
-        elif items:
-            github_status = "ok"
-        else:
-            github_status = "empty"
+        # if github_error:
+        #     github_status = "error"
+        # elif items:
+        #     github_status = "ok"
+        # else:
+        #     github_status = "empty"
+        
+        
+        print(f"\n\n[GITHUB AGENT] \n")
 
-        pprint(f"[GITHUB AGENT] Response: {github_summary}\n")
+        # pprint(f"[GITHUB AGENT] Response: {github_summary}\n")
         return {
-            "github_status": github_status,
-            "github_error": github_error,
-            "github_response": github_summary,
-            "recommended_repos": items,
-            "agent_outputs": {
-                "github_agent": {
-                    "status": github_status,
-                    "error": github_error,
-                    "summary": github_summary,
-                    "items": items,
-                    "type": "github_repo",
+            "agent_outputs":{
+                "github_agent":{
+                    "status":"ok",
+                    "error":None,
+                    "summary":f"Here are some github repos I found for your query :\n\n {context.get('github_items', [])}",
+                    "items": context.get("github_items") or context.get("collected_repos") or [],
+                    "type":"repo",
                 }
             }
         }
