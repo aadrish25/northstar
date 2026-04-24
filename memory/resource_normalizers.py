@@ -25,7 +25,7 @@ def normalize_youtube_video(
 
     Optional fields are allowed and should be additive (url, channel, scores, provenance, etc.).
     """
-    print(f"\n\n[normalize_youtube_video] input video dict: {video}\n")
+    # print(f"\n\n[normalize_youtube_video] input video dict: {video}\n")
     video_id = (
         video.get("video_id")
         or video.get("id")
@@ -236,20 +236,23 @@ def normalize_roadmap(
     status: str = "active",
     resource_type: str = "roadmap",
 ):
+    print(f"\n[ROADMAP NORMALIZER] ITEM: {item}")
     skill = item.get("skill") or item.get("roadmap_query") or item.get("query") or "unknown skill"
     title = item.get("title") or f"Roadmap for {skill}"
     description = item.get("description") or ""
-    resources = item.get("resources") or item.get("roadmap_items") or item.get("items") or []
+    url = item.get("url") or ""
     
     resource : Dict[str, Any] = {
         "id": _safe_str(skill), 
         "title": _safe_str(title),
         "description": _safe_str(description),
-        "resources": resources,
+        "url":url,
         "type": resource_type,
         "source": "roadmap_sh",
         "state": {"status": status},
     }
+    
+    # # print(f"\n[ROADMAP NORMALIZER] normalized resource: {resource}\n")
     
     return resource
     
@@ -262,7 +265,7 @@ def normalize_resource(
     Generic dispatcher. Extend this as you add new sources/types (articles, courses, etc.).
     """
     inferred_kind = (kind or item.get("type") or item.get("source") or item.get("resource_type")  or "").strip()
-    print(f"\n\n[NORMALIZE_RESOURCE] inferred_kind={inferred_kind!r}\n\n")
+    # print(f"\n\n[NORMALIZE_RESOURCE] inferred_kind={inferred_kind!r}\n\n")
     if inferred_kind in {"youtube", "youtube_video", "video"}:
         return normalize_youtube_video(item)
     if inferred_kind in {"book", "books"}:

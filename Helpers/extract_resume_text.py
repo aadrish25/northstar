@@ -1,7 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.chat_models import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser
-from pprint import pprint
+
 import pymupdf
 import asyncio
 
@@ -102,7 +102,6 @@ async def extract_resume_info_from_pdf(pdf_path: str) -> dict:
 
 async def main():
   resume_text = await extract_resume_info_from_pdf(pdf_path=r"sample_resume/sample_resume.pdf")
-  pprint(resume_text)
-
+  return resume_text
 if __name__=="__main__":
     asyncio.run(main())

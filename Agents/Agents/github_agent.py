@@ -1,4 +1,3 @@
-from pprint import pprint
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_classic.output_parsers import ResponseSchema,StructuredOutputParser
@@ -101,9 +100,9 @@ class GithubAgent:
         #     github_status = "empty"
         
         
-        print(f"\n\n[GITHUB AGENT] \n")
+        # print(f"\n\n[GITHUB AGENT] \n")
 
-        # pprint(f"[GITHUB AGENT] Response: {github_summary}\n")
+        #  print(f"[GITHUB AGENT] Response: {github_summary}\n")
         return {
             "agent_outputs":{
                 "github_agent":{

@@ -1,4 +1,4 @@
-from pprint import pprint
+
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_classic.output_parsers import ResponseSchema,StructuredOutputParser
@@ -124,7 +124,6 @@ class OpenLibraryAgent:
         #     else:
         #         open_library_status = "empty"
 
-        pprint(f"\n[OPEN LIBRARY AGENT]\n")
         return {
             "agent_outputs":{
                 "open_library_agent":{

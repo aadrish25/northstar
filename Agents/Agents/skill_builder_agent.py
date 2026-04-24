@@ -1,4 +1,4 @@
-from pprint import pprint
+
 
 from dotenv import load_dotenv
 from langchain_classic.chains import LLMChain
@@ -78,7 +78,6 @@ class SkillBuilderAgent:
         #     else:
         #         skill_builder_status = "empty"
 
-        pprint(f"\n\n[SKILL BUILDER AGENT]\n")
         return {
             "agent_outputs":{
                 "skill_builder_agent":{

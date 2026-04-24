@@ -64,7 +64,7 @@ async def get_books_for_a_specific_subject(context,limit:int=10):
     
         if isinstance(subject,list):
             subject=" ".join(subject)
-        print(f"\n[SPECIFIC SUBJECT BOOK SEARCH TOOL] Topic: {subject}")
+        # print(f"\n[SPECIFIC SUBJECT BOOK SEARCH TOOL] Topic: {subject}")
         
         limit = context.get("open_library_subject_limit") or limit
     else:
@@ -115,7 +115,7 @@ async def get_books_for_a_specific_subject(context,limit:int=10):
         
         formatted_academic_books = await asyncio.gather(*task)
         
-        print(f"\n [SPECIFIC SUBJECT BOOK SEARCH TOOL]: {formatted_academic_books}\n")
+        # print(f"\n [SPECIFIC SUBJECT BOOK SEARCH TOOL]: {formatted_academic_books}\n")
         
         return {
             "academic_books_search_query":subject,
@@ -134,7 +134,7 @@ async def get_books_for_a_specific_subject(context,limit:int=10):
     except httpx.HTTPStatusError as e:
         status_code = e.response.status_code
         error_text = e.response.text
-        print(f"[ERROR IN OPEN LIBRARY SUBJECT SEARCH] HTTP {status_code}: {error_text}")
+        # print(f"[ERROR IN OPEN LIBRARY SUBJECT SEARCH] HTTP {status_code}: {error_text}")
         return {
             "academic_books_search_query":subject,
             "open_library_subject_items": [],
@@ -152,7 +152,7 @@ async def get_books_for_a_specific_subject(context,limit:int=10):
         }
         
     except Exception as e:
-        print(f"[ERROR IN OPEN LIBRARY SUBJECT SEARCH] {e}")
+        # print(f"[ERROR IN OPEN LIBRARY SUBJECT SEARCH] {e}")
         return {
             "academic_books_search_query":subject,
             "open_library_subject_items": [],

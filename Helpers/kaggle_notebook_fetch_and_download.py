@@ -53,7 +53,7 @@ async def fetch_kaggle_notebooks(context:dict,max_results:int=5):
     if isinstance(topic,list):
         topic=" ".join(topic)
         
-    print(f"\n[KAGGLE NOTEBOOKS FETCHER] Topic: {topic}")
+    # print(f"\n[KAGGLE NOTEBOOKS FETCHER] Topic: {topic}")
 
     try:
         api.authenticate()
@@ -78,7 +78,7 @@ async def fetch_kaggle_notebooks(context:dict,max_results:int=5):
     selected = ranked[:max_results]
     results = [format_kernel(kernel, topic) for kernel in selected]
     
-    print(f"\n[KAGGLE NOTEBOOKS FETCHER] Results: {results}")
+    # print(f"\n[KAGGLE NOTEBOOKS FETCHER] Results: {results}")
 
     return  {
             "kaggle_notebooks_query":topic,

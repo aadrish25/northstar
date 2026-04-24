@@ -54,7 +54,7 @@ async def fetch_kaggle_datasets(context:dict, max_results: int = 5):
     if isinstance(topic,list):
         topic=" ".join(topic)
         
-    print(f"\n[KAGGLE DATASET FETCHER] Topic: {topic}")
+    # print(f"\n[KAGGLE DATASET FETCHER] Topic: {topic}")
 
     try:
         api.authenticate()
@@ -79,7 +79,7 @@ async def fetch_kaggle_datasets(context:dict, max_results: int = 5):
     selected = ranked[:max_results]
     results = [format_dataset(d, topic) for d in selected]
     
-    print(f"\n[KAGGLE DATASET FETCHER] Results: {results}")
+    # print(f"\n[KAGGLE DATASET FETCHER] Results: {results}")
 
     return  {
             "kaggle_datasets_query":topic,

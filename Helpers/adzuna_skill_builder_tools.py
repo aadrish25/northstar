@@ -132,7 +132,7 @@ async def fetch_skill_tree(context: dict, max_results: int = 20):
     elif not roles:
         roles = []
 
-    print(f"\n[SKILL BUILDER FETCHER] Roles: {roles}\n")
+    # print(f"\n[SKILL BUILDER FETCHER] Roles: {roles}\n")
 
     try:
         tasks = [
@@ -142,7 +142,7 @@ async def fetch_skill_tree(context: dict, max_results: int = 20):
         ]
         results = await asyncio.gather(*tasks) if tasks else []
 
-        print(f"\n[SKILL BUILDER FETCHER] Results: {results}\n")
+        # print(f"\n[SKILL BUILDER FETCHER] Results: {results}\n")
 
         return {
             "skill_builder_query": roles,

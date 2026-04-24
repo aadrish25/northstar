@@ -96,7 +96,7 @@ class ResourceMemory:
     
     def get_by_type(self, user_id: str, type: str) -> List[Dict]:
         self._ensure_user(user_id)
-        print("self.get_all(user_id)", self.get_all(user_id))
+        # print("self.get_all(user_id)", self.get_all(user_id))
         return [r for r in self.get_all(user_id) if type in r.get("type", "") or r.get("type") == type]
     # -----------------------
     # Add / Merge

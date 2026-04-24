@@ -27,7 +27,7 @@ async def search_books_by_specific_terms_in_title(context, limit=10):
     
         if isinstance(query,list):
             query=" ".join(query)
-        print(f"\n[SPECIFIC TERM IN TITLE TOOL] Topic: {query}")
+        # print(f"\n[SPECIFIC TERM IN TITLE TOOL] Topic: {query}")
         
         limit = context.get("open_library_title_limit") or limit
     else:
@@ -76,7 +76,7 @@ async def search_books_by_specific_terms_in_title(context, limit=10):
         formatted_books = await asyncio.gather(*tasks)
         
         
-        print(f"\n [SPECIFIC TERM IN TITLE TOOL]: {formatted_books}\n")
+        # print(f"\n [SPECIFIC TERM IN TITLE TOOL]: {formatted_books}\n")
         
         return {
             "book_title_search_query":query,
@@ -94,7 +94,7 @@ async def search_books_by_specific_terms_in_title(context, limit=10):
     except httpx.HTTPStatusError as e:
         status_code = e.response.status_code
         error_text = e.response.text
-        print(f"[ERROR IN OPEN LIBRARY TITLE SEARCH] HTTP {status_code}: {error_text}")
+        # print(f"[ERROR IN OPEN LIBRARY TITLE SEARCH] HTTP {status_code}: {error_text}")
         return {
             "book_title_search_query":query,
             "open_library_title_items": [],
@@ -111,7 +111,7 @@ async def search_books_by_specific_terms_in_title(context, limit=10):
         }
         
     except Exception as e:
-        print(f"[ERROR IN OPEN LIBRARY TITLE SEARCH] {e}")
+        # print(f"[ERROR IN OPEN LIBRARY TITLE SEARCH] {e}")
         return {
             "book_title_search_query":query,
             "open_library_title_items": [],
@@ -147,4 +147,4 @@ if __name__ == "__main__":
     }
     
     result = asyncio.run(search_books_by_specific_terms_in_title(test_context))
-    print(result)
+    # print(result)

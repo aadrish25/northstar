@@ -42,7 +42,7 @@ def apply_youtube_filters(params: dict, filters: dict):
     return params
 
 async def video_response_format(video:dict):
-    # print(f"video_item: {video}")
+    # # print(f"video_item: {video}")
     video_id = video.get("id").get("videoId")
     return {
         "video_id":video_id,
@@ -59,7 +59,7 @@ async def fetch_youtube_videos(context:dict):
     """Searches the youtube api by a certain keyword, and returns a list of recommended videos"""
     
     url = "https://www.googleapis.com/youtube/v3/search"
-    print("context in fetch_youtube_videos",context)
+    # print("context in fetch_youtube_videos",context)
 
     max_results = context.get("youtube_max_results") or 5
     try:
@@ -152,7 +152,7 @@ async def fetch_youtube_videos(context:dict):
     except httpx.HTTPStatusError as e:
         status_code = e.response.status_code
         error_text = e.response.text
-        print(f"[ERROR IN YOUTUBE_FETCHER] HTTP {status_code}: {error_text}")
+        # print(f"[ERROR IN YOUTUBE_FETCHER] HTTP {status_code}: {error_text}")
 
         return {
             "videos": [],
@@ -171,7 +171,7 @@ async def fetch_youtube_videos(context:dict):
         }
 
     except Exception as e:
-        print(f"[ERROR IN YOUTUBE_FETCHER] {e}")
+        # print(f"[ERROR IN YOUTUBE_FETCHER] {e}")
         return {
             "videos": [],
             "videos_text": "",

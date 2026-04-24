@@ -5,7 +5,7 @@ from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser
 import asyncio
 import httpx
-from pprint import pprint
+
 
 
 # define llm
@@ -149,7 +149,7 @@ async def get_job_jds(role: str, page: int = 1) -> str:
         return prompt_ready_jds
 
     except Exception as e:
-        print(f"[ADZUNA JOB API ERROR]{e}")
+        # print(f"[ADZUNA JOB API ERROR]{e}")
         return ""
 # ====================================================================================================
 
@@ -252,16 +252,14 @@ async def test_align_resume_with_job_descriptions():
     assert "skill_gap_analysis_error" in result, "Expected skill_gap_analysis_error key"
 
     if result.get("skill_gap_analysis_error"):
-        print("\n[TEST] Resume skill gap analyzer returned an error:")
-        pprint(result["skill_gap_analysis_error"])
-        pprint(result.get("skill_gap_analysis_raw"))
+        # print("\n[TEST] Resume skill gap analyzer returned an error:")
+      
         return
 
     analysis = result.get("skill_gap_analysis")
     assert isinstance(analysis, dict), "Expected skill_gap_analysis to be a dict on success"
 
-    print("\n[TEST] Resume skill gap analyzer output:\n")
-    pprint(analysis)
+    # print("\n[TEST] Resume skill gap analyzer output:\n")
 
 
 if __name__ == "__main__":

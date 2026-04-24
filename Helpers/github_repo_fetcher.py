@@ -60,7 +60,7 @@ async def github_repo_fetcher(context: dict):
     if isinstance(q,list):
         q=" ".join(q)
     
-    print(f"\n[GITHUB REPO FETCHER] Got github_query: {q}\n")
+    # print(f"\n[GITHUB REPO FETCHER] Got github_query: {q}\n")
 
     params = {
         "q": q,
@@ -85,7 +85,7 @@ async def github_repo_fetcher(context: dict):
 
         formatted_repos = await asyncio.gather(*tasks)
 
-        print(f"\n[GITHUB REPO FETCHER] Got formatted repos: {formatted_repos}\n")
+        # print(f"\n[GITHUB REPO FETCHER] Got formatted repos: {formatted_repos}\n")
         
         return {
             "github_query":q,
@@ -102,7 +102,7 @@ async def github_repo_fetcher(context: dict):
         status_code = e.response.status_code
         error_text = e.response.text
 
-        print(f"[ERROR IN GITHUB_FETCHER] HTTP {status_code}: {error_text}")
+        # print(f"[ERROR IN GITHUB_FETCHER] HTTP {status_code}: {error_text}")
 
         return {
             "github_query":q,
@@ -118,7 +118,7 @@ async def github_repo_fetcher(context: dict):
         }
 
     except Exception as e:
-        print(f"[ERROR IN GITHUB_FETCHER] {e}")
+        # print(f"[ERROR IN GITHUB_FETCHER] {e}")
 
         return {
             "github_query":q,

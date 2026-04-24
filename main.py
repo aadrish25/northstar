@@ -2,7 +2,6 @@ import asyncio
 import json
 from quart import Quart, websocket,jsonify
 from typing import Dict
-from pprint import pprint
 from quart_cors import cors
 import requests
 
@@ -119,7 +118,7 @@ async def _should_enter_feedback_mode(user_id: str, context: Dict) -> bool:
 
     decision = await feedback_agent.run(tmp)
 
-    print(f"\n\n[ORCHESTRATOR] Response from feedback agent: {decision}\n")
+    # print(f"\n\n[ORCHESTRATOR] Response from feedback agent: {decision}\n")
     
     # Treat as feedback if the model is reacting to cached results:
     # - explicit save/reuse\n+    # - refine where refined_query differs from the raw user input
@@ -139,7 +138,7 @@ async def _should_enter_feedback_mode(user_id: str, context: Dict) -> bool:
 async def run_agent(user_id: str, agent, context: Dict):
     # run tools
     if getattr(agent, "tools", None):
-        print(f"\n [RUN AGENT] Tools: {agent.tools}\n")
+        # print(f"\n [RUN AGENT] Tools: {agent.tools}\n")
         tasks = [
             execute_tool_with_feedback(
                 user_id,
@@ -157,10 +156,10 @@ async def run_agent(user_id: str, agent, context: Dict):
     # run agent logic
     response = await agent.run(context)
     
-    print(f"\n [RUN AGENT] Agent response: {response}\n")
+    # print(f"\n [RUN AGENT] Agent response: {response}\n")
     if isinstance(response, dict):
         if "agent_outputs" in response:
-            print("line:160")
+            # print("line:160")
             context.setdefault("agent_outputs",{})
             context["agent_outputs"].update(response["agent_outputs"])
             
@@ -168,10 +167,10 @@ async def run_agent(user_id: str, agent, context: Dict):
                 k:v for k,v in response.items()
                 if k != "agent_outputs"
             }
-            print(f"\n [RUN AGENT] line 168: {context['agent_outputs']}\n")
+            # print(f"\n [RUN AGENT] line 168: {context['agent_outputs']}\n")
             
         context.update(response)
-    print(f"\n [RUN AGENT] line 171: {context['agent_outputs']}\n")
+    # print(f"\n [RUN AGENT] line 171: {context['agent_outputs']}\n")
     return response
 
 
@@ -188,7 +187,7 @@ async def orchestrator(user_id: str, context: Dict):
     # -----------------------
     if await _should_enter_feedback_mode(user_id, context):
         # Build a tool registry from existing agents
-        print(f"\n\n[ORCHESTRATOR] Entering feedback mode based on feedback agent decision.\n")
+        # print(f"\n\n[ORCHESTRATOR] Entering feedback mode based on feedback agent decision.\n")
         tools = []
         for agent in (
             youtube_agent,
@@ -201,13 +200,13 @@ async def orchestrator(user_id: str, context: Dict):
         ):
             tools.extend(getattr(agent, "tools", []) or [])
 
-        print(f"\n\n[ORCHESTRATOR] Tools available for feedback mode: {tools}\n")
+        # print(f"\n\n[ORCHESTRATOR] Tools available for feedback mode: {tools}\n")
         tool_by_name = {getattr(t, "__name__", str(t)): t for t in tools}
 
         cached_tool_names = set(tool_cache.list_keys(user_id))
         runnable_tools = [tool_by_name[n] for n in cached_tool_names if n in tool_by_name]
         
-        print(f"\n\n[ORCHESTRATOR] Runnable tools based on cache: {runnable_tools}\n")
+        # print(f"\n\n[ORCHESTRATOR] Runnable tools based on cache: {runnable_tools}\n")
 
         if runnable_tools:
             await asyncio.gather(*[
@@ -231,14 +230,14 @@ async def orchestrator(user_id: str, context: Dict):
     # Parent → 1st Subagent
     # -----------------------
     parent_res = await parent_agent.run(context)
-    pprint(f"[ORCHESTRATOR] Parent response: {parent_res}")
+    # print(f"[ORCHESTRATOR] Parent response: {parent_res}")
     if isinstance(parent_res, dict):
         context.update(parent_res)
         
     # extract the selected agent from parent response
     selected_agent = parent_res.get("agent")
     
-    print(f"\n\n[ORCHESTRATOR] Selected agent: {selected_agent}\n")
+    # print(f"\n\n[ORCHESTRATOR] Selected agent: {selected_agent}\n")
     
     # select the agent instance
     selected_agent_instance = name_chain_mapping.get(selected_agent,None)
@@ -252,7 +251,7 @@ async def orchestrator(user_id: str, context: Dict):
     if isinstance(agent_response, dict):
         context.update(agent_response)
         
-    pprint(f"[ORCHESTRATOR] Agent response: {agent_response}")
+    # print(f"[ORCHESTRATOR] Agent response: {agent_response}")
     
     # ✅ Normalize agents to a list
     if isinstance(context.get("agents"), str):
@@ -272,7 +271,7 @@ async def orchestrator(user_id: str, context: Dict):
         if a in name_chain_mapping
     ]
     
-    pprint(f"\n [ORCHESTRATOR] Agents selected: {agents}\n")
+    # print(f"\n [ORCHESTRATOR] Agents selected: {agents}\n")
 
     await asyncio.gather(*[
         run_agent(user_id, agent, context)
@@ -303,7 +302,7 @@ async def orchestrator(user_id: str, context: Dict):
 
 @app.websocket("/ws/<user_id>")
 async def ws(user_id):
-    print(f"Client connected: {user_id}")
+    # print(f"Client connected: {user_id}")
     try:
 
         while True:
@@ -320,7 +319,7 @@ async def ws(user_id):
             # Run orchestrator
             result = await orchestrator(user_id, context)
             
-            # pprint(f"\n[Final Response]{result}\n")
+            #  print(f"\n[Final Response]{result}\n")
             # Send response back
 
             await websocket.send(json.dumps({"message":result["response"]}))
@@ -328,7 +327,7 @@ async def ws(user_id):
 
 
     except Exception as e:
-        print(f"Connection closed for {user_id}: {e}")
+     (f"Connection closed for {user_id}: {e}")
 
 
 
@@ -339,7 +338,7 @@ async def index():
 @app.route("/get_resource_by_type/<user_id>/<type>", methods=["POST"])
 async def get_resource_by_type(user_id, type):
     result = user_recommended_memory.get_by_type(user_id, type)
-    print("result", result)
+    # print("result", result)
     return jsonify({"response": result})
 
 @app.route("/update_resource_status/<user_id>/<resource_id>", methods=["POST"])

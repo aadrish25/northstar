@@ -7,7 +7,6 @@ from urllib.parse import quote
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
-from pprint import pprint
 from Helpers.resolve_query import resolve_query
 
 load_dotenv()
@@ -33,11 +32,11 @@ async def generate_slugs() -> dict:
     # return from disk cache if exists
     if CACHE_FILE.exists():
         ROADMAP_SLUGS = json.loads(CACHE_FILE.read_text())
-        print(f"[cache] loaded {len(ROADMAP_SLUGS)} slugs from disk")
+        # print(f"[cache] loaded {len(ROADMAP_SLUGS)} slugs from disk")
         return ROADMAP_SLUGS
     
     # fetch fresh from GitHub
-    print("[fetch] fetching slugs from GitHub...")
+    # print("[fetch] fetching slugs from GitHub...")
     async with httpx.AsyncClient() as client:
         response = await client.get(GITHUB_API)
         data = response.json()
@@ -50,7 +49,7 @@ async def generate_slugs() -> dict:
     
     # save to disk
     CACHE_FILE.write_text(json.dumps(ROADMAP_SLUGS, indent=2))
-    print(f"[cache] saved {len(ROADMAP_SLUGS)} slugs to disk")
+    # print(f"[cache] saved {len(ROADMAP_SLUGS)} slugs to disk")
     
     return ROADMAP_SLUGS
 
@@ -105,7 +104,7 @@ async def slug_generator(skill:str):
 
     response = await slug_checker_llm.ainvoke([HumanMessage(content=prompt)])
     
-    pprint(f"Selected slug: {response.content.strip()}")
+    #print(f"Selected slug: {response.content.strip()}")
     
     return response.content.strip()
 
@@ -126,7 +125,7 @@ async def fetch_roadmap(context:dict) -> dict:
     if isinstance(resolved_skill, list):
         resolved_skill = " ".join(str(item) for item in resolved_skill if item)
 
-    pprint(f"\n\n[FETCH ROADMAP] Resolved skill/job role: {resolved_skill}\n\n")
+    #print(f"\n\n[FETCH ROADMAP] Resolved skill/job role: {resolved_skill}\n\n")
 
     if not resolved_skill:
         return {
@@ -147,7 +146,7 @@ async def fetch_roadmap(context:dict) -> dict:
         slug = await slug_generator(resolved_skill)
         api_url = f"https://api.github.com/repos/kamranahmedse/developer-roadmap/contents/src/data/roadmaps/{slug}/content"
 
-        pprint(f"\n\n[FETCH ROADMAP] Generated slug: {slug}\n\n")
+        # print(f"\n\n[FETCH ROADMAP] Generated slug: {slug}\n\n")
 
         async with httpx.AsyncClient() as client:
             resp = await client.get(api_url)
@@ -175,12 +174,29 @@ async def fetch_roadmap(context:dict) -> dict:
 
         formatted = [format_skill(s) for s in skills]
         
-        print(f"\n\n[FETCH ROADMAP] Response: {formatted}\n\n")
+        items = []
+        for f in formatted:
+            # # print(f"line:180[fetch_roadmap]{f}")
+            for k,v in f["resources"].items():
+                # # print(f"line:182[fetch_roadmap]{k}")
+                # # print(f"line:182[fetch_roadmap]{v}")
+                type = k 
+                for i in v:
+                    items.append({
+                        "skill": f["skill"],
+                        "title": f["title"],
+                        "description": f["description"],
+                        "url": i["url"],
+                        "label": i["label"],
+                        "type":type,
+                    })
+        
+        # # print(f"\n\n[FETCH ROADMAP] Response: {formatted}\n\n")
 
         return {
             "roadmap_query": resolved_skill,
             "roadmap_items": formatted,
-            "items": formatted,
+            "items": items,
             "roadmap_error": None,
             "type": "roadmap",
             "roadmap_raw": {
@@ -230,5 +246,5 @@ fetch_roadmap.query_aliases = (
     "job_roles",
     "user_input",
 )
-fetch_roadmap.result_items_key = "roadmap_items"
+fetch_roadmap.result_items_key = "items"
 fetch_roadmap.resource_type = "roadmap"
