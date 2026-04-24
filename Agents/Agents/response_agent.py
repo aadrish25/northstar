@@ -7,6 +7,7 @@ from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from pprint import pprint
 from memory.tool_memory import tool_cache
+from Agents.Agents.open_library_agent import merge_open_library_books
 
 load_dotenv()
 
@@ -57,8 +58,8 @@ Recommended Kaggle Notebooks:
 Recommended Kaggle Datasets:
 {recommended_kaggle_datasets}
 
-Open Library Agent Summary:
-{open_library_response}
+Recommended Books:
+{recommended_books}
 
 Skill Builder Agent Summary:
 {skill_builder_response}
@@ -149,7 +150,7 @@ class ResponseAgent:
         return "\n".join(lines) if lines else "None"
 
     async def run(self, context: dict):
-        # Prepare compact video text
+        # =============================================================================Prepare compact video text======================================================================
         videos_cache = tool_cache.get_full(user_id=context.get("user_id"), tool_id="run_video_ranker_agent") or {}
         print(f"\nline:151 videos_cache: {videos_cache}\n")
         videos = videos_cache.get("result")
@@ -168,8 +169,8 @@ class ResponseAgent:
         print(f"line:162")
         pprint(f"\n\n[RESPONSE AGENT] Prepared video text:\n{video_text}\n\n")
         print(f"line:164")    
-        
-        # prepare the github repos 
+        # =========================================================================================================================================================================
+        # ================================================================== prepare the github repos ============================================================================= 
         repositories_cache = tool_cache.get_full(user_id=context.get("user_id"), tool_id="github_repo_fetcher") or {}
 
         print(f"\nline:168 repositories_cache: {repositories_cache}\n")
@@ -187,14 +188,14 @@ class ResponseAgent:
                 )
                 
             print(f"\n\n[RESPONSE AGENT] Prepared repo text:\n{repo_text}\n\n")
-            
-        print(f"line:179")
+        # =====================================================================================================================================================
+        print(f"line:192")
         
         
-        # for kaggle notebooks
+        # ==================================================================== for kaggle notebooks =============================================================================================
         notebooks_cache = tool_cache.get_full(user_id=context.get("user_id"),tool_id="fetch_kaggle_notebooks")
-        print(f"\nline:196 notebooks_cache: {notebooks_cache}\n")
-        notebooks = notebooks_cache.get("result") or []
+        print(f"\nline:197 notebooks_cache: {notebooks_cache}\n")
+        notebooks = notebooks_cache.get("result") or [] if notebooks_cache else []
         notebooks_text = ""
         if notebooks:
             for i, notebook in enumerate(notebooks.get("items"), start=1):
@@ -207,13 +208,13 @@ class ResponseAgent:
                 )
         
             print(f"\n\n[RESPONSE AGENT] Prepared Kaggle notebook text:\n{notebooks_text}\n\n")
+        # =====================================================================================================================================================
         
-        
-        print(f"line:193")
-        # for kaggle datasets
+        print(f"line:213")
+        # =============================================================== for kaggle datasets ==================================================================
         datasets_cache = tool_cache.get_full(user_id=context.get("user_id"),tool_id="fetch_kaggle_datasets")
         print(f"\nline:215 datasets_cache: {datasets_cache}\n")
-        datasets = datasets_cache.get("result") or []
+        datasets = datasets_cache.get("result") or [] if datasets_cache else []
         dataset_text = ""
         if datasets:
             for i, dataset in enumerate(datasets.get("items"), start=1):
@@ -226,41 +227,68 @@ class ResponseAgent:
                 )
                 
             print(f"\n\n[RESPONSE AGENT] Prepared Kaggle dataset text:\n{dataset_text}\n\n")
-        # print(f"line:206")
-        # # for open library books
-        # books = context.get("recommended_books") or []
-        # books_text = ""
-        # if books:
-        #     for i, book in enumerate(books[:5], start=1):
-        #         title = book.get("title") or book.get("book_title") or "Unknown title"
-        #         author = book.get("author_name")
-        #         if isinstance(author, list):
-        #             author = ", ".join(author[:2]) if author else None
-        #         if not author:
-        #             author_names = book.get("author_names")
-        #             if isinstance(author_names, list):
-        #                 author = ", ".join(author_names[:2]) if author_names else None
+        # ============================================================================================================================
+        print(f"line:231")
+        # ==================================================== for open library books ===========================================================================
+        title_cache = tool_cache.get_full(
+        user_id=context.get("user_id"),
+        tool_id="search_books_by_specific_terms_in_title"
+        ) or {}
+        
+        print(f"\nline:238 title_cache: {title_cache}\n")
+        
+        subject_cache = tool_cache.get_full(
+            user_id=context.get("user_id"),
+            tool_id="get_books_for_a_specific_subject"
+        ) or {}
+        
+        print(f"\nline:245 subject_cache: {subject_cache}\n")
+        
+        
+        title_result = title_cache.get("result") or {} if title_cache else {}
+        subject_result = subject_cache.get("result") or {} if subject_cache else {}
+        
+        title_books = title_result.get("open_library_title_items") or []
+        subject_books = subject_result.get("open_library_subject_items") or []
+        
+        merged_books = merge_open_library_books(title_books, subject_books)
+        print(f"\nline:255 merged_books: {merged_books}\n")
+        books_text = ""
+        if merged_books:
+            for i, book in enumerate(merged_books, start=1):
+                title = book.get("title") or book.get("book_title") or "Unknown title"
+                author = book.get("author_name")
+                if isinstance(author, list):
+                    author = ", ".join(author[:2]) if author else None
+                if not author:
+                    author_names = book.get("author_names")
+                    if isinstance(author_names, list):
+                        author = ", ".join(author_names[:2]) if author_names else None
 
-        #         subject = book.get("subject")
-        #         if isinstance(subject, list):
-        #             subject = ", ".join(subject[:2]) if subject else None
-        #         if not subject:
-        #             covered = book.get("subject_covered")
-        #             if isinstance(covered, list):
-        #                 subject = ", ".join(covered[:2]) if covered else None
+                subject = book.get("subject")
+                if isinstance(subject, list):
+                    subject = ", ".join(subject[:2]) if subject else None
+                if not subject:
+                    covered = book.get("subject_covered")
+                    if isinstance(covered, list):
+                        subject = ", ".join(covered[:2]) if covered else None
 
-        #         year = book.get("first_publish_year") or "N/A"
-        #         work_key = book.get("works_key") or "N/A"
-        #         source_type = book.get("source_type") or "N/A"
+                year = book.get("first_publish_year") or "N/A"
+                work_key = book.get("works_key") or "N/A"
+                source_type = book.get("source_type") or "N/A"
 
-        #         books_text += (
-        #             f"{i}. {title}\n"
-        #             f"   Author: {author or 'Unknown'}\n"
-        #             f"   Subject: {subject or 'N/A'}\n"
-        #             f"   First Published: {year}\n"
-        #             f"   Work Key: {work_key}\n"
-        #             f"   Source: {source_type}\n\n"
-        #         )
+                books_text += (
+                    f"{i}. {title}\n"
+                    f"   Author: {author or 'Unknown'}\n"
+                    f"   Subject: {subject or 'N/A'}\n"
+                    f"   First Published: {year}\n"
+                    f"   Work Key: {work_key}\n"
+                    f"   Source: {source_type}\n\n"
+                )
+                
+                
+            print(f"\n\n[RESPONSE AGENT] Prepared Open Library books text:\n{books_text}\n\n")
+        # ===================================================================================================================================
         # print(f"line:241")
         # roadmap_resources_text = self._build_roadmap_resources_text(context)
         # print(f"line:243")
@@ -273,11 +301,7 @@ class ResponseAgent:
             "recommended_repos": repo_text or "None",
             "recommended_kaggle_notebooks": notebooks_text or "None",
             "recommended_kaggle_datasets": dataset_text or "None",
-            "recommended_books": "None",
-            "github_response":"None",
-            "open_library_response": context.get("open_library_response") or "None",
-            "open_library_status": context.get("open_library_status") or "None",
-            "open_library_error": context.get("open_library_error") or "None",
+            "recommended_books": books_text or "None",
             "skill_builder_response":context.get("skill_builder_response") or None,
             "roadmap_response":context.get("roadmap_response") or None,
             "roadmap_resources": "None",

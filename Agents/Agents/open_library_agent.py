@@ -99,44 +99,40 @@ class OpenLibraryAgent:
         subject_books = context.get("open_library_subject_items") or []
         open_library_books = merge_open_library_books(title_match_books, subject_books)
 
-        title_error = context.get("open_library_title_error")
-        subject_error = context.get("open_library_subject_error")
-        error_parts = [err for err in (title_error, subject_error) if err]
-        open_library_error = " | ".join(error_parts) if error_parts else None
+        # title_error = context.get("open_library_title_error")
+        # subject_error = context.get("open_library_subject_error")
+        # error_parts = [err for err in (title_error, subject_error) if err]
+        # open_library_error = " | ".join(error_parts) if error_parts else None
 
-        if open_library_error and not open_library_books:
-            open_library_status = "error"
-            openlibrary_summary = f"I couldn't fetch Open Library recommendations right now because: {open_library_error}"
-        else:
-            response = await self.chain.ainvoke({
-                "user_input":context.get("user_input"),
-                "chat_history":context.get("chat_history"),
-                "title_match_books": title_match_books,
-                "subject_books": subject_books,
-                "goals":context.get("goals"),
-                "filters": context.get("filters"),
-            })
+        # if open_library_error and not open_library_books:
+        #     open_library_status = "error"
+        #     openlibrary_summary = f"I couldn't fetch Open Library recommendations right now because: {open_library_error}"
+        # else:
+        #     response = await self.chain.ainvoke({
+        #         "user_input":context.get("user_input"),
+        #         "chat_history":context.get("chat_history"),
+        #         "title_match_books": title_match_books,
+        #         "subject_books": subject_books,
+        #         "goals":context.get("goals"),
+        #         "filters": context.get("filters"),
+        #     })
 
-            openlibrary_summary = output_parser.parse(response['text'])
+        #     openlibrary_summary = output_parser.parse(response['text'])
 
-            if open_library_books:
-                open_library_status = "ok"
-            else:
-                open_library_status = "empty"
+        #     if open_library_books:
+        #         open_library_status = "ok"
+        #     else:
+        #         open_library_status = "empty"
 
-        pprint(f"[OPEN LIBRARY AGENT] Response: {openlibrary_summary}\n")
+        pprint(f"\n[OPEN LIBRARY AGENT]\n")
         return {
-            "open_library_status": open_library_status,
-            "open_library_error": open_library_error,
-            "open_library_response": openlibrary_summary,
-            "recommended_books": open_library_books,
-            "agent_outputs": {
-                "open_library_agent": {
-                    "status": open_library_status,
-                    "error": open_library_error,
-                    "summary": openlibrary_summary,
+            "agent_outputs":{
+                "open_library_agent":{
+                    "status":"ok",
+                    "error":None,
+                    "summary":f"Here are some Open Library books I found for your query :\n\n {open_library_books}",
                     "items": open_library_books,
-                    "type": "books",
+                    "type":"books",
                 }
             }
         }

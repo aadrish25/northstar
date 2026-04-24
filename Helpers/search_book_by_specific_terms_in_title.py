@@ -137,3 +137,14 @@ search_books_by_specific_terms_in_title.query_aliases = (
 )
 search_books_by_specific_terms_in_title.result_items_key = "open_library_title_items"
 search_books_by_specific_terms_in_title.resource_type = "books"
+
+
+# test
+if __name__ == "__main__":
+    test_context = {
+        "user_input": "I want to learn about machine learning",
+        "learning_subjects": ["machine learning", "artificial intelligence", "data science"],
+    }
+    
+    result = asyncio.run(search_books_by_specific_terms_in_title(test_context))
+    print(result)
