@@ -51,11 +51,11 @@ RECOMMENDED VIDEOS:
 Recommended GitHub Repositories:
 {recommended_repos}
 
-Kaggle Notebooks Agent Response:
-{kaggle_notebooks_response}
+Recommended Kaggle Notebooks:
+{recommended_kaggle_notebooks}
 
-Kaggle Datasets Agent Response:
-{kaggle_datasets_response}
+Recommended Kaggle Datasets:
+{recommended_kaggle_datasets}
 
 Open Library Agent Summary:
 {open_library_response}
@@ -171,6 +171,7 @@ class ResponseAgent:
         
         # prepare the github repos 
         repositories_cache = tool_cache.get_full(user_id=context.get("user_id"), tool_id="github_repo_fetcher") or {}
+
         print(f"\nline:168 repositories_cache: {repositories_cache}\n")
         repos = repositories_cache.get("result")
         repo_text = ""
@@ -187,33 +188,44 @@ class ResponseAgent:
                 
             print(f"\n\n[RESPONSE AGENT] Prepared repo text:\n{repo_text}\n\n")
             
-        # print(f"line:179")
-        # # for kaggle notebooks
-        # notebooks = context.get("recommended_kaggle_notebooks") or []
-        # kaggle_text = ""
-        # if notebooks:
-        #     for i, notebook in enumerate(notebooks[:5], start=1):
-        #         kaggle_text += (
-        #             f"{i}. {notebook.get('title')}\n"
-        #             f"   Author: {notebook.get('author') or 'Unknown'}\n"
-        #             f"   Votes: {notebook.get('votes', 'N/A')}\n"
-        #             f"   Language: {notebook.get('language') or 'N/A'}\n"
-        #             f"   Link: {notebook.get('url')}\n\n"
-        #         )
+        print(f"line:179")
         
-        # print(f"line:193")
-        # # for kaggle datasets
-        # datasets = context.get("recommended_kaggle_datasets") or []
-        # dataset_text = ""
-        # if datasets:
-        #     for i, dataset in enumerate(datasets[:5], start=1):
-        #         dataset_text += (
-        #             f"{i}. {dataset.get('title')}\n"
-        #             f"   Votes: {dataset.get('votes', 'N/A')}\n"
-        #             f"   Size: {dataset.get('size') or 'N/A'}\n"
-        #             f"   Last Updated: {dataset.get('last_updated') or 'N/A'}\n"
-        #             f"   Link: {dataset.get('url')}\n\n"
-        #         )
+        
+        # for kaggle notebooks
+        notebooks_cache = tool_cache.get_full(user_id=context.get("user_id"),tool_id="fetch_kaggle_notebooks")
+        print(f"\nline:196 notebooks_cache: {notebooks_cache}\n")
+        notebooks = notebooks_cache.get("result") or []
+        notebooks_text = ""
+        if notebooks:
+            for i, notebook in enumerate(notebooks.get("items"), start=1):
+                notebooks_text += (
+                    f"{i}. {notebook.get('title')}\n"
+                    f"   Author: {notebook.get('author') or 'Unknown'}\n"
+                    f"   Votes: {notebook.get('votes', 'N/A')}\n"
+                    f"   Language: {notebook.get('language') or 'N/A'}\n"
+                    f"   Link: {notebook.get('url')}\n\n"
+                )
+        
+            print(f"\n\n[RESPONSE AGENT] Prepared Kaggle notebook text:\n{notebooks_text}\n\n")
+        
+        
+        print(f"line:193")
+        # for kaggle datasets
+        datasets_cache = tool_cache.get_full(user_id=context.get("user_id"),tool_id="fetch_kaggle_datasets")
+        print(f"\nline:215 datasets_cache: {datasets_cache}\n")
+        datasets = datasets_cache.get("result") or []
+        dataset_text = ""
+        if datasets:
+            for i, dataset in enumerate(datasets.get("items"), start=1):
+                dataset_text += (
+                    f"{i}. {dataset.get('title')}\n"
+                    f"   Votes: {dataset.get('votes', 'N/A')}\n"
+                    f"   Size: {dataset.get('size') or 'N/A'}\n"
+                    f"   Last Updated: {dataset.get('last_updated') or 'N/A'}\n"
+                    f"   Link: {dataset.get('url')}\n\n"
+                )
+                
+            print(f"\n\n[RESPONSE AGENT] Prepared Kaggle dataset text:\n{dataset_text}\n\n")
         # print(f"line:206")
         # # for open library books
         # books = context.get("recommended_books") or []
@@ -259,10 +271,8 @@ class ResponseAgent:
             "filters": context.get("filters"),
             "recommended_videos": video_text or "None",
             "recommended_repos": repo_text or "None",
-            "recommended_kaggle_notebooks": "None",
-            "recommended_kaggle_datasets": "None",
-            "kaggle_datasets_response":context.get("kaggle_datasets_response") or None,
-            "kaggle_notebooks_response":context.get("kaggle_notebooks_response") or None,
+            "recommended_kaggle_notebooks": notebooks_text or "None",
+            "recommended_kaggle_datasets": dataset_text or "None",
             "recommended_books": "None",
             "github_response":"None",
             "open_library_response": context.get("open_library_response") or "None",

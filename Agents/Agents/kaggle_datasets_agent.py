@@ -55,40 +55,35 @@ class KaggleDatasetsAgent:
         self.chain = chain
         
     async def run(self,context:dict):
-        items = context.get("kaggle_dataset_items") or context.get("collected_datasets") or []
-        kaggle_datasets_error = context.get("kaggle_datasets_error")
+        # items = context.get("kaggle_dataset_items") or context.get("collected_datasets") or []
+        # kaggle_datasets_error = context.get("kaggle_datasets_error")
 
-        if kaggle_datasets_error:
-            kaggle_datasets_status = "error"
-            parsed_response = f"I couldn't fetch Kaggle datasets right now because: {kaggle_datasets_error}"
-        else:
-            response = await self.chain.ainvoke({
-                "user_input": context.get("user_input"),
-                "chat_history": context.get("chat_history"),
-                "goals": context.get("goals"),
-                "filters": context.get("filters"),
-                "collected_datasets": items,
-            })
-            parsed_response = output_parser.parse(response['text'])
-            if items:
-                kaggle_datasets_status = "ok"
-            else:
-                kaggle_datasets_status = "empty"
+        # if kaggle_datasets_error:
+        #     kaggle_datasets_status = "error"
+        #     parsed_response = f"I couldn't fetch Kaggle datasets right now because: {kaggle_datasets_error}"
+        # else:
+        #     response = await self.chain.ainvoke({
+        #         "user_input": context.get("user_input"),
+        #         "chat_history": context.get("chat_history"),
+        #         "goals": context.get("goals"),
+        #         "filters": context.get("filters"),
+        #         "collected_datasets": items,
+        #     })
+        #     parsed_response = output_parser.parse(response['text'])
+        #     if items:
+        #         kaggle_datasets_status = "ok"
+        #     else:
+        #         kaggle_datasets_status = "empty"
 
-        pprint(f"\n\n[KAGGLE DATASETS AGENT] Response: {parsed_response}\n\n")
+        pprint(f"\n\n[KAGGLE DATASETS AGENT]\n")
         return {
-            "kaggle_response": parsed_response,
-            "kaggle_datasets_response": parsed_response,
-            "kaggle_datasets_status": kaggle_datasets_status,
-            "kaggle_datasets_error": kaggle_datasets_error,
-            "recommended_kaggle_datasets": items,
-            "agent_outputs": {
-                "kaggle_datasets_agent": {
-                    "status": kaggle_datasets_status,
-                    "error": kaggle_datasets_error,
-                    "summary": parsed_response,
-                    "items": items,
-                    "type": "dataset",
+            "agent_outputs":{
+                "kaggle_datasets_agent":{
+                    "status":"ok",
+                    "error":None,
+                    "summary":f"Here are some Kaggle datasets I found for your query :\n\n {context.get('kaggle_dataset_items', [])}",
+                    "items": context.get("kaggle_dataset_items") or [],
+                    "type":"dataset",
                 }
             }
         }

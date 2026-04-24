@@ -55,40 +55,35 @@ class KaggleNotebooksAgent:
         self.chain = chain
         
     async def run(self,context:dict):
-        items = context.get("kaggle_notebooks_items") or context.get("collected_notebooks") or []
-        kaggle_notebooks_error = context.get("kaggle_notebooks_error")
+        # items = context.get("kaggle_notebooks_items") or context.get("collected_notebooks") or []
+        # kaggle_notebooks_error = context.get("kaggle_notebooks_error")
 
-        if kaggle_notebooks_error:
-            kaggle_notebooks_status = "error"
-            parsed_response = f"I couldn't fetch Kaggle notebooks right now because: {kaggle_notebooks_error}"
-        else:
-            response = await self.chain.ainvoke({
-                "user_input": context.get("user_input"),
-                "chat_history": context.get("chat_history"),
-                "goals": context.get("goals"),
-                "filters": context.get("filters"),
-                "collected_notebooks": items,
-            })
-            parsed_response = output_parser.parse(response['text'])
-            if items:
-                kaggle_notebooks_status = "ok"
-            else:
-                kaggle_notebooks_status = "empty"
+        # if kaggle_notebooks_error:
+        #     kaggle_notebooks_status = "error"
+        #     parsed_response = f"I couldn't fetch Kaggle notebooks right now because: {kaggle_notebooks_error}"
+        # else:
+        #     response = await self.chain.ainvoke({
+        #         "user_input": context.get("user_input"),
+        #         "chat_history": context.get("chat_history"),
+        #         "goals": context.get("goals"),
+        #         "filters": context.get("filters"),
+        #         "collected_notebooks": items,
+        #     })
+        #     parsed_response = output_parser.parse(response['text'])
+        #     if items:
+        #         kaggle_notebooks_status = "ok"
+        #     else:
+        #         kaggle_notebooks_status = "empty"
 
-        pprint(f"\n\n[KAGGLE NOTEBOOKS AGENT] Response: {parsed_response}\n\n")
+        pprint(f"\n\n[KAGGLE NOTEBOOKS AGENT]\n")
         return {
-            "kaggle_response": parsed_response,
-            "kaggle_notebooks_response": parsed_response,
-            "kaggle_notebooks_status": kaggle_notebooks_status,
-            "kaggle_notebooks_error": kaggle_notebooks_error,
-            "recommended_kaggle_notebooks": items,
-            "agent_outputs": {
-                "kaggle_notebooks_agent": {
-                    "status": kaggle_notebooks_status,
-                    "error": kaggle_notebooks_error,
-                    "summary": parsed_response,
-                    "items": items,
-                    "type": "notebook",
+            "agent_outputs":{
+                "kaggle_notebooks_agent":{
+                    "status":"ok",
+                    "error":None,
+                    "summary":f"Here are some Kaggle notebooks I found for your query :\n\n {context.get('kaggle_notebooks_items', [])}",
+                    "items": context.get("kaggle_notebooks_items") or [],
+                    "type":"notebook",
                 }
             }
         }
