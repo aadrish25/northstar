@@ -7,522 +7,516 @@ import "highlight.js/styles/github.css";
 /* ---------------- VIEW CONFIG ---------------- */
 
 const VIEW_CONFIG = {
-  chat: {
-    label: "💬 Chat",
-    apiType: null
-  },
-
-  articles: {
-    label: "📄 Articles",
-    apiType: "article"
-  },
-
-  videos: {
-    label: "🎥 Videos",
-    apiType: "video"
-  },
-
-  books: {
-    label: "📚 Books",
-    apiType: "book"
-  },
-
-  datasets: {
-    label: "🗂 Datasets",
-    apiType: "dataset"
-  },
-
-  notebooks: {
-    label: "📓 Notebooks",
-    apiType: "notebook"
-  },
-
-  github: {
-    label: "💻 GitHub Repos",
-    apiType: "github_repo"
-  },
-
-  skillTrees: {
-    label: "🌱 Skill Trees",
-    apiType: "skill_tree"
-  },
-
-  roadmaps: {
-    label: "🛣 Roadmaps",
-    apiType: "roadmap"
-  },
-
-  resources: {
-    label: "📚 Resources",
-    apiType: "resource"
-  }
+  chat:{label:"💬 Chat",apiType:null},
+  articles:{label:"📄 Articles",apiType:"article"},
+  videos:{label:"🎥 Videos",apiType:"video"},
+  books:{label:"📚 Books",apiType:"book"},
+  datasets:{label:"🗂 Datasets",apiType:"dataset"},
+  notebooks:{label:"📓 Notebooks",apiType:"notebook"},
+  github:{label:"💻 GitHub Repos",apiType:"github_repo"},
+  skillTrees:{label:"🌱 Skill Trees",apiType:"skill_tree"},
+  roadmaps:{label:"🛣 Roadmaps",apiType:"roadmap"},
+  resources:{label:"📚 Resources",apiType:"resource"}
 };
 
-export default function App() {
+export default function App(){
 
-  const [username, setUsername] =
-    useState("");
+const [username,setUsername]=useState("");
+const [loggedIn,setLoggedIn]=useState(false);
 
-  const [loggedIn, setLoggedIn] =
-    useState(false);
+const [view,setView]=useState("chat");
 
-  const [view, setView] =
-    useState("chat");
+const [messages,setMessages]=useState([]);
+const [thinking,setThinking]=useState([]);
+const [input,setInput]=useState("");
+const [showThinking]=useState(true);
+const [isTyping,setIsTyping]=useState(false);
+const [connected,setConnected]=useState(false);
 
-  const [messages, setMessages] =
-    useState([]);
+const [resources,setResources]=useState([]);
+const [loadingResources,setLoadingResources]=useState(false);
 
-  const [thinking, setThinking] =
-    useState([]);
+/* ---------- Resume upload ---------- */
 
-  const [input, setInput] =
-    useState("");
+const [uploadingResume,setUploadingResume]=useState(false);
+const [uploadMessage,setUploadMessage]=useState("");
+const fileInputRef=useRef(null);
 
-  const [showThinking] =
-    useState(true);
+/* ---------- Voice ---------- */
 
-  const [isTyping, setIsTyping] =
-    useState(false);
+const [speechSupported,setSpeechSupported]=useState(false);
+const [isRecording,setIsRecording]=useState(false);
 
-  const [connected, setConnected] =
-    useState(false);
+const recognitionRef=useRef(null);
 
-  const [resources, setResources] =
-    useState([]);
+/* ---------- refs ---------- */
 
-  const [loadingResources,
-    setLoadingResources] =
-      useState(false);
+const wsRef=useRef(null);
+const bottomRef=useRef(null);
+const inputRef=useRef(null);
 
-  /* -------- Voice only fills input ------- */
 
-  const [speechSupported,
-    setSpeechSupported] =
-      useState(false);
+/* ---------------- WEBSOCKET ---------------- */
 
-  const [isRecording,
-    setIsRecording] =
-      useState(false);
+useEffect(()=>{
 
-  const recognitionRef =
-    useRef(null);
+if(!loggedIn || !username) return;
 
-  /* -------- refs -------- */
+const ws=
+new WebSocket(
+`ws://localhost:5000/ws/${username}`
+);
 
-  const wsRef =
-    useRef(null);
+wsRef.current=ws;
 
-  const bottomRef =
-    useRef(null);
+ws.onopen=()=>{
+setConnected(true);
+};
 
-  const inputRef =
-    useRef(null);
+ws.onclose=()=>{
+setConnected(false);
+};
 
+ws.onerror=()=>{
+ws.close();
+};
 
-  /* ---------------- WEBSOCKET ---------------- */
+ws.onmessage=(event)=>{
 
-  useEffect(() => {
+try{
 
-    if (
-      !loggedIn ||
-      !username
-    ) return;
+const data=
+JSON.parse(
+event.data
+);
 
-    const ws =
-      new WebSocket(
-        `ws://localhost:5000/ws/${username}`
-      );
+if(data.think){
+setThinking(prev=>[
+...prev,
+data.think
+]);
+}
 
-    wsRef.current = ws;
+if(data.message){
 
-    ws.onopen = () =>
-      setConnected(true);
+setMessages(prev=>[
+...prev,
+{
+sender:"server",
+text:data.message
+}
+]);
 
-    ws.onclose = () =>
-      setConnected(false);
+setIsTyping(false);
 
-    ws.onerror = () =>
-      ws.close();
+}
 
-    ws.onmessage =
-      event => {
+}catch(e){
+console.error(
+"WS parse error",
+e
+);
+}
 
-      try {
+};
 
-        const data =
-          JSON.parse(
-            event.data
-          );
+return()=>{
+ws.close();
+};
 
-        if (
-          data.think
-        ) {
-          setThinking(
-            prev=>[
-              ...prev,
-              data.think
-            ]
-          );
-        }
-
-        if (
-          data.message
-        ) {
-          setMessages(
-            prev=>[
-              ...prev,
-              {
-                sender:
-                  "server",
-                text:
-                  data.message
-              }
-            ]
-          );
-
-          setIsTyping(
-            false
-          );
-        }
-
-      } catch(e){
-        console.error(
-          "WS parse error",
-          e
-        );
-      }
-
-    };
-
-    return ()=>{
-      ws.close();
-    };
-
-  },[
-    loggedIn,
-    username
-  ]);
-
-
-  /* ---------------- SPEECH ---------------- */
-
-  useEffect(()=>{
-
-    const SpeechRecognition =
-      window.SpeechRecognition ||
-      window.webkitSpeechRecognition;
-
-    if(!SpeechRecognition){
-      setSpeechSupported(false);
-      return;
-    }
-
-    setSpeechSupported(true);
-
-    const recognition =
-      new SpeechRecognition();
-
-    recognition.continuous =
-      false;
-
-    recognition.interimResults =
-      false;
-
-    recognition.lang =
-      "en-US";
-
-    recognition.onstart =
-      ()=>{
-        setIsRecording(
-          true
-        );
-      };
-
-    recognition.onresult =
-      event=>{
-
-      try {
-
-        let text="";
-
-        for(
-          let i=0;
-          i<event.results.length;
-          i++
-        ){
-
-          if(
-            event.results[i]
-              .isFinal
-          ){
-            text +=
-              event.results[i][0]
-              .transcript;
-          }
-
-        }
-
-        if(
-          text.trim()
-        ){
-          // only fill textbox
-          setInput(
-            prev =>
-              prev
-                ? prev +
-                  " " +
-                  text.trim()
-                : text.trim()
-          );
-        }
-
-      } catch(e){
-        console.error(e);
-      }
-
-    };
-
-    recognition.onerror =
-      e=>{
-        console.error(
-          "Speech error",
-          e
-        );
-        setIsRecording(
-          false
-        );
-      };
-
-    recognition.onend =
-      ()=>{
-        setIsRecording(
-          false
-        );
-      };
-
-    recognitionRef.current =
-      recognition;
-
-    return ()=>{
-      try{
-        recognition.stop();
-      } catch{}
-    };
-
-  },[]);
-
-
-  const toggleRecording=()=>{
-
-    if(
-      !recognitionRef.current
-    ) return;
-
-    if(
-      isRecording
-    ){
-      recognitionRef.current.stop();
-    }
-    else{
-      try{
-        recognitionRef.current.start();
-      } catch(e){
-        console.error(e);
-      }
-    }
-
-  };
-
-
-  /* ---------------- SCROLL ---------------- */
-
-  useEffect(()=>{
-    bottomRef.current?.
-      scrollIntoView({
-        behavior:"smooth"
-      });
-  },[
-    messages,
-    isTyping
-  ]);
-
-
-  /* ---------------- FOCUS ---------------- */
-
-  useEffect(()=>{
-
-    if(
-      !isRecording &&
-      document.activeElement !==
-      inputRef.current
-    ){
-      inputRef.current?.
-        focus();
-    }
-
-  },[
-    input,
-    isRecording
-  ]);
-
-
-  /* ---------------- SEND ---------------- */
-
-  const sendMessage=()=>{
-
-    if(
-      !input.trim()
-    ) return;
-
-    const ws=
-      wsRef.current;
-
-    if(
-      !ws ||
-      ws.readyState !==
-      WebSocket.OPEN
-    ){
-      return;
-    }
-
-    setThinking([]);
-    setIsTyping(true);
-
-    ws.send(
-      JSON.stringify({
-        message:input
-      })
-    );
-
-    setMessages(prev=>[
-      ...prev,
-      {
-        sender:"user",
-        text:input
-      }
-    ]);
-
-    setInput("");
-
-  };
-
-
-  /* ---------------- FETCH ---------------- */
-
-  const fetchResources=
-  async()=>{
-
-    const apiType=
-      VIEW_CONFIG[view]
-      ?.apiType;
-
-    if(!apiType)
-      return;
-
-    setLoadingResources(
-      true
-    );
-
-    try{
-
-      const res=
-        await fetch(
-          `http://localhost:5000/get_resource_by_type/${username}/${apiType}`,
-          {
-            method:"POST"
-          }
-        );
-
-      const data=
-        await res.json();
-
-      setResources(
-        data.response||[]
-      );
-
-    }catch(e){
-      console.error(e);
-    }
-    finally{
-      setLoadingResources(
-        false
-      );
-    }
-
-  };
-
-
-  useEffect(()=>{
-    if(
-      view!=="chat"
-    ){
-      fetchResources();
-    }
-  },[view]);
-
-
-  const archiveResource=
-  async(id)=>{
-
-    await fetch(
-      `http://localhost:5000/update_resource_status/${username}/${id}`,
-      {
-        method:"POST",
-        headers:{
-          "Content-Type":
-          "application/json"
-        },
-        body:
-        JSON.stringify({
-          status:
-          "archived"
-        })
-      }
-    );
-
-    setResources(
-      prev=>
-        prev.filter(
-          r=>
-          (
-           r.id||
-           r._id||
-           r.resource_id
-          )!==id
-        )
-    );
-
-  };
-
-
-  const deleteResource=
-  async(id)=>{
-
-    await fetch(
-      `http://localhost:5000/delete_resource/${username}/${id}`,
-      {
-        method:"DELETE"
-      }
-    );
-
-    setResources(
-      prev=>
-        prev.filter(
-          r=>
-          (
-           r.id||
-           r._id||
-           r.resource_id
-          )!==id
-        )
-    );
-
-  };
+},[
+loggedIn,
+username
+]);
+
+
+
+/* ---------------- SPEECH ---------------- */
+
+useEffect(()=>{
+
+const SpeechRecognition=
+window.SpeechRecognition||
+window.webkitSpeechRecognition;
+
+if(!SpeechRecognition){
+setSpeechSupported(false);
+return;
+}
+
+setSpeechSupported(true);
+
+const recognition=
+new SpeechRecognition();
+
+recognition.continuous=false;
+recognition.interimResults=false;
+recognition.lang="en-US";
+
+recognition.onstart=()=>{
+setIsRecording(true);
+};
+
+recognition.onresult=(event)=>{
+
+try{
+
+let text="";
+
+for(
+let i=0;
+i<event.results.length;
+i++
+){
+
+if(
+event.results[i].isFinal
+){
+text+=
+event.results[i][0]
+.transcript;
+}
+
+}
+
+if(text.trim()){
+
+setInput(prev=>
+prev
+? prev+" "+text.trim()
+: text.trim()
+);
+
+}
+
+}catch(e){
+console.error(e);
+}
+
+};
+
+recognition.onerror=(e)=>{
+console.error(e);
+setIsRecording(false);
+};
+
+recognition.onend=()=>{
+setIsRecording(false);
+};
+
+recognitionRef.current=
+recognition;
+
+return()=>{
+try{
+recognition.stop();
+}catch{}
+};
+
+},[]);
+
+
+
+const toggleRecording=()=>{
+
+if(
+!recognitionRef.current
+)return;
+
+if(isRecording){
+recognitionRef.current.stop();
+}else{
+try{
+recognitionRef.current.start();
+}catch(e){
+console.error(e);
+}
+}
+
+};
+
+
+
+/* ------------ Resume Upload ------------ */
+
+const openResumePicker=()=>{
+if(fileInputRef.current){
+fileInputRef.current.click();
+}
+};
+
+const handleResumeUpload=
+async(e)=>{
+
+try{
+
+const file=
+e.target.files?.[0];
+
+if(!file) return;
+
+setUploadMessage("");
+
+if(
+file.type!=="application/pdf"
+){
+setUploadMessage(
+"Only PDF files allowed"
+);
+return;
+}
+
+if(
+file.size >
+5*1024*1024
+){
+setUploadMessage(
+"File must be under 5 MB"
+);
+return;
+}
+
+setUploadingResume(true);
+
+const formData=
+new FormData();
+
+formData.append(
+"file",
+file
+);
+
+const res=
+await fetch(
+`http://localhost:5000/upload_resume/${username}`,
+{
+method:"POST",
+body:formData
+}
+);
+
+const data=
+await res.json();
+
+if(data.success){
+setUploadMessage(
+"Resume uploaded successfully"
+);
+}else{
+setUploadMessage(
+data.message||
+"Upload failed"
+);
+}
+
+}catch(e){
+
+console.error(e);
+
+setUploadMessage(
+"Upload failed"
+);
+
+}
+finally{
+setUploadingResume(false);
+
+if(fileInputRef.current){
+fileInputRef.current.value="";
+}
+}
+
+};
+
+
+
+/* ---------------- SCROLL ---------------- */
+
+useEffect(()=>{
+bottomRef.current?.
+scrollIntoView({
+behavior:"smooth"
+});
+},[
+messages,
+isTyping
+]);
+
+
+
+/* ---------------- FOCUS ---------------- */
+
+useEffect(()=>{
+
+if(
+!isRecording &&
+document.activeElement
+!==inputRef.current
+){
+inputRef.current?.focus();
+}
+
+},[
+input,
+isRecording
+]);
+
+
+
+/* ---------------- SEND ---------------- */
+
+const sendMessage=()=>{
+
+if(!input.trim())
+return;
+
+const ws=
+wsRef.current;
+
+if(
+!ws ||
+ws.readyState
+!==WebSocket.OPEN
+){
+return;
+}
+
+setThinking([]);
+setIsTyping(true);
+
+ws.send(
+JSON.stringify({
+message:input
+})
+);
+
+setMessages(prev=>[
+...prev,
+{
+sender:"user",
+text:input
+}
+]);
+
+setInput("");
+
+};
+
+
+
+/* ---------------- FETCH ---------------- */
+
+const fetchResources=
+async()=>{
+
+const apiType=
+VIEW_CONFIG[view]?.apiType;
+
+if(!apiType) return;
+
+setLoadingResources(
+true
+);
+
+try{
+
+const res=
+await fetch(
+`http://localhost:5000/get_resource_by_type/${username}/${apiType}`,
+{
+method:"POST"
+}
+);
+
+const data=
+await res.json();
+
+setResources(
+data.response||[]
+);
+
+}catch(e){
+console.error(e);
+}
+finally{
+setLoadingResources(
+false
+);
+}
+
+};
+
+
+useEffect(()=>{
+if(view!=="chat"){
+fetchResources();
+}
+},[view]);
+
+
+const archiveResource=
+async(id)=>{
+
+await fetch(
+`http://localhost:5000/update_resource_status/${username}/${id}`,
+{
+method:"POST",
+headers:{
+"Content-Type":
+"application/json"
+},
+body:
+JSON.stringify({
+status:"archived"
+})
+}
+);
+
+setResources(
+prev=>
+prev.filter(
+r=>
+(
+r.id||
+r._id||
+r.resource_id
+)!==id
+)
+);
+
+};
+
+
+const deleteResource=
+async(id)=>{
+
+await fetch(
+`http://localhost:5000/delete_resource/${username}/${id}`,
+{
+method:"DELETE"
+}
+);
+
+setResources(
+prev=>
+prev.filter(
+r=>
+(
+r.id||
+r._id||
+r.resource_id
+)!==id
+)
+);
+
+};
+
 
 
 /* ---------------- LOGIN ---------------- */
 
 if(!loggedIn){
+
 return(
 <div className="min-h-screen flex items-center justify-center bg-gray-100">
 <div className="bg-white p-6 rounded-lg shadow w-[320px] space-y-4">
@@ -536,7 +530,8 @@ value={username}
 onChange={e=>
 setUsername(
 e.target.value
-)}
+)
+}
 placeholder="Enter your name"
 className="w-full border px-3 py-2 rounded"
 />
@@ -554,7 +549,9 @@ Continue
 </div>
 </div>
 );
+
 }
+
 
 
 /* ---------------- SIDEBAR ---------------- */
@@ -587,8 +584,38 @@ view===key
 ))
 }
 
+<button
+onClick={openResumePicker}
+className="w-full text-left px-3 py-2 rounded mt-4 border hover:bg-gray-100"
+>
+📄 Upload Resume
+</button>
+
+<input
+ref={fileInputRef}
+type="file"
+accept="application/pdf,.pdf"
+style={{display:"none"}}
+onChange={handleResumeUpload}
+/>
+
+{
+uploadingResume &&
+<div className="text-xs mt-2 text-gray-500">
+Uploading...
+</div>
+}
+
+{
+uploadMessage &&
+<div className="text-xs mt-2">
+{uploadMessage}
+</div>
+}
+
 </aside>
 );
+
 
 
 /* ---------------- CHAT ---------------- */
@@ -601,8 +628,8 @@ const ChatView=()=>(
 <span>
 {
 connected
-? "🟢 Online"
-: "🔴 Offline"
+?"🟢 Online"
+:"🔴 Offline"
 }
 </span>
 
@@ -611,13 +638,14 @@ speechSupported &&
 <span className="text-xs text-gray-500">
 {
 isRecording
-? "🎙 Recording..."
-: "Mic Ready"
+?"🎙 Recording..."
+:"Mic Ready"
 }
 </span>
 }
 
 </div>
+
 
 <div className="flex-1 overflow-y-auto p-4 space-y-3">
 
@@ -628,15 +656,14 @@ messages.map(
 key={i}
 className={
 m.sender==="user"
-? "text-right"
-: ""
+?"text-right":""
 }
 >
 <div className="inline-block bg-gray-100 px-3 py-2 rounded">
 
 {
 m.sender==="user"
-? m.text
+?m.text
 :
 <ReactMarkdown
 remarkPlugins={[
@@ -674,6 +701,7 @@ thinking.map(
 
 </div>
 
+
 <div className="p-3 border-t flex gap-2">
 
 <input
@@ -704,14 +732,14 @@ toggleRecording
 }
 className={`px-4 rounded border ${
 isRecording
-? "bg-red-500 text-white"
-: "bg-white"
+?"bg-red-500 text-white"
+:"bg-white"
 }`}
 >
 {
 isRecording
-? "⏹ Stop"
-: "🎤 Mic"
+?"⏹ Stop"
+:"🎤 Mic"
 }
 </button>
 }
@@ -729,6 +757,7 @@ Send
 );
 
 
+
 /* ---------------- CONTENT ---------------- */
 
 const ContentView=()=>(
@@ -740,7 +769,9 @@ const ContentView=()=>(
 
 {
 loadingResources &&
-<div>Loading...</div>
+<div>
+Loading...
+</div>
 }
 
 {
@@ -843,6 +874,7 @@ Delete
 );
 
 
+
 /* ---------------- APP ---------------- */
 
 return(
@@ -851,8 +883,8 @@ return(
 <div className="flex-1">
 {
 view==="chat"
-? <ChatView/>
-: <ContentView/>
+?<ChatView/>
+:<ContentView/>
 }
 </div>
 </div>
