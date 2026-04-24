@@ -70,7 +70,7 @@ Roadmap Response:
 
 
 Skill Gap Analysis:
-{skill_gap_analysis_summary}
+{skill_gap_analysis}
 
 STATE:
 {state}
@@ -97,6 +97,20 @@ chain = prompt | llm
 class ResponseAgent:
     def __init__(self):
         self.chain = chain
+        
+        
+        
+    @staticmethod
+    def _build_skill_gap_summary_text(context: dict) -> str:
+        agent_outputs = context.get("agent_outputs") or {}
+        skill_gap_output = agent_outputs.get("resume_skill_gap_analyzer_agent") or {}
+
+        return (
+            context.get("skill_gap_analyzer_response")
+            or skill_gap_output.get("summary")
+            or "None"
+        )
+
 
     @staticmethod
     def _build_roadmap_text(roadmap_items: list) -> str:
@@ -357,13 +371,22 @@ class ResponseAgent:
         ) or {}
         print(f"\nline:358 roadmap_cache: {roadmap_cache}\n")
 
-        roadmap_result = roadmap_cache.get("result") or {} if roadmap_cache else []
+        roadmap_result = roadmap_cache.get("result") or {} if roadmap_cache else {}
         roadmap_items = roadmap_result.get("roadmap_items") or []
+        roadmap_text = ""
         if roadmap_items:
             roadmap_text = self._build_roadmap_text(roadmap_items)
             print(f"\n\n[RESPONSE AGENT] Prepared roadmap text:\n{roadmap_text}\n\n")
         print(f"line:365")
         # ==========================================================================================================================================
+        
+        
+        # ========================================================================================= Resume Skill Gap Analyzer =======================================
+        
+        skill_gap_analysis_text = self._build_skill_gap_summary_text(context=context)
+        if skill_gap_analysis_text:
+            print(f"\n[RESPONSE AGENT] Prepared skill gap analysis text:\n{skill_gap_analysis_text}\n")
+        
         response = await self.chain.ainvoke({
             "user_input": context.get("user_input"),
             "chat_history": context.get("chat_history"),
@@ -376,7 +399,7 @@ class ResponseAgent:
             "recommended_books": books_text or "None",
             "skill_builder_result": skill_builder_text or "None",
             "roadmap_response": roadmap_text or "None",
-            "skill_gap_analysis_summary": context.get("skill_gap_analyzer_response") or "None",
+            "skill_gap_analysis": skill_gap_analysis_text or "None",
             "agent_outputs": context.get("agent_outputs") or "None",
             "resources": context.get("resources") or "None",
             "state": context.get("state") or "suggesting",

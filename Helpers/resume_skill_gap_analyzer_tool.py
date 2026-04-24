@@ -5,6 +5,7 @@ from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser
 import asyncio
 import httpx
+from pprint import pprint
 
 
 # define llm
@@ -236,3 +237,32 @@ align_resume_with_job_descriptions.query_aliases = (
 )
 align_resume_with_job_descriptions.result_items_key = "skill_gap_analysis_items"
 align_resume_with_job_descriptions.resource_type = "skill_gap_analysis"
+
+
+async def test_align_resume_with_job_descriptions():
+    test_context = {
+        "job_roles": "Data Scientist",
+        "user_input": "Analyze my resume against Data Scientist roles",
+    }
+
+    result = await align_resume_with_job_descriptions(test_context)
+
+    assert isinstance(result, dict), "Expected analyzer result to be a dict"
+    assert result.get("type") == "skill_gap_analysis", "Expected type=skill_gap_analysis"
+    assert "skill_gap_analysis_error" in result, "Expected skill_gap_analysis_error key"
+
+    if result.get("skill_gap_analysis_error"):
+        print("\n[TEST] Resume skill gap analyzer returned an error:")
+        pprint(result["skill_gap_analysis_error"])
+        pprint(result.get("skill_gap_analysis_raw"))
+        return
+
+    analysis = result.get("skill_gap_analysis")
+    assert isinstance(analysis, dict), "Expected skill_gap_analysis to be a dict on success"
+
+    print("\n[TEST] Resume skill gap analyzer output:\n")
+    pprint(analysis)
+
+
+if __name__ == "__main__":
+    asyncio.run(test_align_resume_with_job_descriptions())

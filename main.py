@@ -20,6 +20,7 @@ from Agents.Agents.open_library_agent import OpenLibraryAgent
 from Agents.Agents.career_agent import CareerAgent
 from Agents.Agents.skill_builder_agent import SkillBuilderAgent
 from Agents.Agents.roadmap_builder_agent import RoadmapBuilderAgent
+from Agents.Agents.skill_gap_analyzer_agent import ResumeSkillGapAnalyzerAgent
 
 
 
@@ -50,6 +51,7 @@ open_library_agent = OpenLibraryAgent()
 career_agent = CareerAgent()
 skill_builder_agent = SkillBuilderAgent()
 roadmap_builder_agent = RoadmapBuilderAgent()
+resume_skill_gap_analyzer_agent = ResumeSkillGapAnalyzerAgent()
 
 name_chain_mapping = {
     "youtube_agent": youtube_agent,
@@ -61,6 +63,7 @@ name_chain_mapping = {
     "career_planner_agent":career_agent,
     "skill_builder_agent":skill_builder_agent,
     "roadmap_builder_agent":roadmap_builder_agent,
+    "skill_gap_analyzer_agent":resume_skill_gap_analyzer_agent,
 }
 
 

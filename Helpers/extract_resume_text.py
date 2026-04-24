@@ -1,7 +1,12 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.chat_models import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser
+from pprint import pprint
 import pymupdf
+import asyncio
+
+# global variable
+user_resume_text = None
 
 # ============================== RESUME EXTRACTION SYSTEM PROMPT ==============================
 RESUME_EXTRACTION_SYSTEM = ChatPromptTemplate.from_template(template="""
@@ -88,6 +93,16 @@ async def extract_resume_info(resume_text: str) -> dict:
 
 async def extract_resume_info_from_pdf(pdf_path: str) -> dict:
     """Extract structured information from a resume PDF."""
-    resume_text = extract_text_from_pdf(pdf_path)
+    global user_resume_text
+    if user_resume_text is None:
+      resume_text = extract_text_from_pdf(pdf_path)
     resume_info = await extract_resume_info(resume_text)
     return resume_info
+  
+
+async def main():
+  resume_text = await extract_resume_info_from_pdf(pdf_path=r"sample_resume/sample_resume.pdf")
+  pprint(resume_text)
+
+if __name__=="__main__":
+    asyncio.run(main())
