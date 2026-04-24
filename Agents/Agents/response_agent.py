@@ -65,11 +65,8 @@ Skill Builder Result:
 {skill_builder_result}
 
 
-Roadmap Builder Agent Summary:
+Roadmap Response:
 {roadmap_response}
-
-Roadmap Resource URLs:
-{roadmap_resources}
 
 
 Skill Gap Analysis:
@@ -100,6 +97,55 @@ chain = prompt | llm
 class ResponseAgent:
     def __init__(self):
         self.chain = chain
+
+    @staticmethod
+    def _build_roadmap_text(roadmap_items: list) -> str:
+        if not isinstance(roadmap_items, list) or not roadmap_items:
+            return "None"
+
+        lines = []
+
+        for i, item in enumerate(roadmap_items, start=1):
+            if not isinstance(item, dict):
+                continue
+
+            title = item.get("title") or "Untitled roadmap item"
+            skill = item.get("skill") or "N/A"
+            description = item.get("description") or "No description"
+
+            lines.append(f"{i}. {title}")
+            lines.append(f"   Skill: {skill}")
+            lines.append(f"   Description: {description}")
+
+            resources = item.get("resources") or {}
+            resource_count = 0
+
+            if isinstance(resources, dict):
+                for rtype, entries in resources.items():
+                    if not isinstance(entries, list):
+                        continue
+
+                    for entry in entries:
+                        if not isinstance(entry, dict):
+                            continue
+
+                        url = entry.get("url")
+                        if not url:
+                            continue
+
+                        label = entry.get("label") or "Resource"
+                        lines.append(f"   [{rtype}] {label}: {url}")
+                        resource_count += 1
+
+                        if resource_count >= 3:
+                            break
+
+                    if resource_count >= 3:
+                        break
+
+            lines.append("")
+
+        return "\n".join(lines).strip() or "None"
 
     @staticmethod
     def _build_roadmap_resources_text(context: dict) -> str:
@@ -152,12 +198,12 @@ class ResponseAgent:
     async def run(self, context: dict):
         # =============================================================================Prepare compact video text======================================================================
         videos_cache = tool_cache.get_full(user_id=context.get("user_id"), tool_id="run_video_ranker_agent") or {}
-        print(f"\nline:151 videos_cache: {videos_cache}\n")
+        print(f"\nline:201 videos_cache: {videos_cache}\n")
         videos = videos_cache.get("result")
-        print(f"\nline:152 context: {context.keys()}\n")
-        print(f"\nline:153 agent_outputs: {context.get('agent_outputs', {})}\n")
+        print(f"\nline:203 context: {context.keys()}\n")
+        print(f"\nline:204 agent_outputs: {context.get('agent_outputs', {})}\n")
         # videos = context.get("agent_outputs").get("youtube_recommender_agent") or []
-        print(f"line:154")
+        print(f"line:206")
         video_text = ""
         if videos:
             for i, v in enumerate(videos.get("items"), start=1):
@@ -166,14 +212,14 @@ class ResponseAgent:
                     f"   Channel: {v.get('channel_name')}\n"
                     f"   Link: {v.get('video_url')}\n\n"
                 )
-        print(f"line:162")
-        pprint(f"\n\n[RESPONSE AGENT] Prepared video text:\n{video_text}\n\n")
-        print(f"line:164")    
+            print(f"line:162")
+            pprint(f"\n\n[RESPONSE AGENT] Prepared video text:\n{video_text}\n\n")
+        print(f"line:217")    
         # =========================================================================================================================================================================
         # ================================================================== prepare the github repos ============================================================================= 
         repositories_cache = tool_cache.get_full(user_id=context.get("user_id"), tool_id="github_repo_fetcher") or {}
 
-        print(f"\nline:168 repositories_cache: {repositories_cache}\n")
+        print(f"\nline:222 repositories_cache: {repositories_cache}\n")
         repos = repositories_cache.get("result")
         repo_text = ""
         if repos:
@@ -189,12 +235,12 @@ class ResponseAgent:
                 
             print(f"\n\n[RESPONSE AGENT] Prepared repo text:\n{repo_text}\n\n")
         # =====================================================================================================================================================
-        print(f"line:192")
+        print(f"line:238")
         
         
         # ==================================================================== for kaggle notebooks =============================================================================================
         notebooks_cache = tool_cache.get_full(user_id=context.get("user_id"),tool_id="fetch_kaggle_notebooks")
-        print(f"\nline:197 notebooks_cache: {notebooks_cache}\n")
+        print(f"\nline:243 notebooks_cache: {notebooks_cache}\n")
         notebooks = notebooks_cache.get("result") or [] if notebooks_cache else []
         notebooks_text = ""
         if notebooks:
@@ -210,10 +256,10 @@ class ResponseAgent:
             print(f"\n\n[RESPONSE AGENT] Prepared Kaggle notebook text:\n{notebooks_text}\n\n")
         # =====================================================================================================================================================
         
-        print(f"line:213")
+        print(f"line:259")
         # =============================================================== for kaggle datasets ==================================================================
         datasets_cache = tool_cache.get_full(user_id=context.get("user_id"),tool_id="fetch_kaggle_datasets")
-        print(f"\nline:215 datasets_cache: {datasets_cache}\n")
+        print(f"\nline:262 datasets_cache: {datasets_cache}\n")
         datasets = datasets_cache.get("result") or [] if datasets_cache else []
         dataset_text = ""
         if datasets:
@@ -228,21 +274,21 @@ class ResponseAgent:
                 
             print(f"\n\n[RESPONSE AGENT] Prepared Kaggle dataset text:\n{dataset_text}\n\n")
         # ============================================================================================================================
-        print(f"line:231")
+        print(f"line:277")
         # ==================================================== for open library books ===========================================================================
         title_cache = tool_cache.get_full(
         user_id=context.get("user_id"),
         tool_id="search_books_by_specific_terms_in_title"
         ) or {}
         
-        print(f"\nline:238 title_cache: {title_cache}\n")
+        print(f"\nline:284 title_cache: {title_cache}\n")
         
         subject_cache = tool_cache.get_full(
             user_id=context.get("user_id"),
             tool_id="get_books_for_a_specific_subject"
         ) or {}
         
-        print(f"\nline:245 subject_cache: {subject_cache}\n")
+        print(f"\nline:291 subject_cache: {subject_cache}\n")
         
         
         title_result = title_cache.get("result") or {} if title_cache else {}
@@ -252,7 +298,7 @@ class ResponseAgent:
         subject_books = subject_result.get("open_library_subject_items") or []
         
         merged_books = merge_open_library_books(title_books, subject_books)
-        print(f"\nline:255 merged_books: {merged_books}\n")
+        print(f"\nline:301 merged_books: {merged_books}\n")
         books_text = ""
         if merged_books:
             for i, book in enumerate(merged_books, start=1):
@@ -289,22 +335,35 @@ class ResponseAgent:
                 
             print(f"\n\n[RESPONSE AGENT] Prepared Open Library books text:\n{books_text}\n\n")
         # ===================================================================================================================================
-        print(f"line:292")
+        print(f"line:338")
         # ==================================================================== Skill Builder items ============================================
         skill_builder_cache = tool_cache.get_full(user_id=context.get("user_id"), tool_id="fetch_skill_tree") or {}
-        print(f"\nline:295 skill_builder_cache: {skill_builder_cache}\n")
+        print(f"\nline:341 skill_builder_cache: {skill_builder_cache}\n")
         skills = skill_builder_cache.get("result").get("items")[0] or [] if skill_builder_cache else []
         skill_builder_text = ""
         if skills:
             for i,skill in enumerate(skills.get("skills"),start=1):
                 skill_builder_text += (
                     f"{i}. Skill: {skill.get('skill')}\n"
-                    f"     Demand:{skill.get("demand",1)}\n"
+                    f"     Demand:{skill.get('demand', 1)}\n"
                 )
             print(f"\n\n[RESPONSE AGENT] Prepared skill builder text:\n{skill_builder_text}\n\n")
         # ===================================================================================================================================
-        # roadmap_resources_text = self._build_roadmap_resources_text(context)
-        # print(f"line:243")
+        # ==================================================================== Roadmap agent ============================================
+        print(f"line:353")
+        roadmap_cache = tool_cache.get_full(
+            user_id=context.get("user_id"),
+            tool_id="fetch_roadmap"
+        ) or {}
+        print(f"\nline:358 roadmap_cache: {roadmap_cache}\n")
+
+        roadmap_result = roadmap_cache.get("result") or {} if roadmap_cache else []
+        roadmap_items = roadmap_result.get("roadmap_items") or []
+        if roadmap_items:
+            roadmap_text = self._build_roadmap_text(roadmap_items)
+            print(f"\n\n[RESPONSE AGENT] Prepared roadmap text:\n{roadmap_text}\n\n")
+        print(f"line:365")
+        # ==========================================================================================================================================
         response = await self.chain.ainvoke({
             "user_input": context.get("user_input"),
             "chat_history": context.get("chat_history"),
@@ -316,8 +375,7 @@ class ResponseAgent:
             "recommended_kaggle_datasets": dataset_text or "None",
             "recommended_books": books_text or "None",
             "skill_builder_result": skill_builder_text or "None",
-            "roadmap_response":context.get("roadmap_response") or None,
-            "roadmap_resources": "None",
+            "roadmap_response": roadmap_text or "None",
             "skill_gap_analysis_summary": context.get("skill_gap_analyzer_response") or "None",
             "agent_outputs": context.get("agent_outputs") or "None",
             "resources": context.get("resources") or "None",

@@ -63,42 +63,38 @@ class RoadmapBuilderAgent:
         
         
     async def run(self, context:dict):
-        items = context.get("roadmap_items", [])
-        roadmap_error = context.get("roadmap_error", None)
+        # items = context.get("roadmap_items", [])
+        # roadmap_error = context.get("roadmap_error", None)
         
-        if roadmap_error:
-            roadmap_status = "error"
-            parsed_response = f"I couldn't build the roadmap right now because: {roadmap_error}"
-        else:
-            response = await self.chain.ainvoke({
-                "chat_history": context.get("chat_history", ""),
-                "user_input": context.get("user_input", ""),
-                "goals": context.get("goals", ""),
-                "filters": context.get("filters", ""),
-                "roadmap_items": items
-            })
+        # if roadmap_error:
+        #     roadmap_status = "error"
+        #     parsed_response = f"I couldn't build the roadmap right now because: {roadmap_error}"
+        # else:
+        #     response = await self.chain.ainvoke({
+        #         "chat_history": context.get("chat_history", ""),
+        #         "user_input": context.get("user_input", ""),
+        #         "goals": context.get("goals", ""),
+        #         "filters": context.get("filters", ""),
+        #         "roadmap_items": items
+        #     })
             
-            parsed_response = output_parser.parse(response.content)
+        #     parsed_response = output_parser.parse(response.content)
             
-            if items:
-                roadmap_status = "ok"
-            else:
-                roadmap_status = "empty"
+        #     if items:
+        #         roadmap_status = "ok"
+        #     else:
+        #         roadmap_status = "empty"
                 
                 
-        pprint(f"\n\n[ROADMAP BUILDER AGENT] Response: {parsed_response}\n\n")
+        pprint(f"\n\n[ROADMAP BUILDER AGENT]\n")
         return {
-            "roadmap_response": parsed_response,
-            "roadmap_status": roadmap_status,
-            "roadmap_error": roadmap_error,
-            "recommended_roadmaps": items,
-            "agent_outputs": {
-                "roadmap_builder_agent": {
-                    "status": roadmap_status,
-                    "error": roadmap_error,
-                    "summary": parsed_response,
-                    "items": items,
-                    "type": "roadmap",
+            "agent_outputs":{
+                "roadmap_builder_agent":{
+                    "status":"ok",
+                    "error":None,
+                    "summary":"Here's a comprehensive roadmap I found based on the target role mentioned.",
+                    "items": context.get("roadmap_items") or [],
+                    "type":"roadmap",
                 }
             }
         }
