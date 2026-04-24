@@ -181,6 +181,23 @@ class ResumeSkillGapAnalyzerAgent:
 
     async def run(self, context:dict):
         # print(f"\n[RESUME SKILL GAP ANALYZER AGENT]\n")
+        
+        
+        
+        if not os.path.exists(f"resume/{context.get("user_id")}_resume.pdf"):
+            return {
+            "skill_gap_analyzer_response": "NO VALID RESUME IS UPLOADED.ASK USER TO UPLOAD A VALID RESUME",
+            "agent_outputs":{
+                "resume_skill_gap_analyzer_agent":{
+                    "status": "No resume found",
+                    "error": "No resume found",
+                    "summary": "NO VALID RESUME IS UPLOADED.ASK USER TO UPLOAD A VALID RESUME",
+                    "items": [],
+                    "type":"skill_gap_analysis",
+                }
+            }
+        }
+        
 
         analysis_error = context.get("skill_gap_analysis_error")
         analysis_items = context.get("skill_gap_analysis_items") or []
@@ -197,6 +214,7 @@ class ResumeSkillGapAnalyzerAgent:
         else:
             formatted_summary = "Skill gap analysis is not available right now."
             skill_gap_analyzer_status = "empty"
+            
 
         return {
             "skill_gap_analyzer_response": formatted_summary,

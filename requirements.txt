@@ -17,3 +17,5 @@ torchaudio
 transformers==4.56.0
 torch
 torchcodec
+tiktoken
+sentencepiece

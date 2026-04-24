@@ -5,7 +5,7 @@ from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser
 import asyncio
 import httpx
-
+import os
 
 
 # define llm
@@ -158,8 +158,6 @@ async def get_job_jds(role: str, page: int = 1) -> str:
 # main connector function 
 async def align_resume_with_job_descriptions(context:dict) -> dict:
     try:
-        # fetch the resume info in structured format using the resume extraction tool
-        candidate_profile = await extract_resume_info_from_pdf(pdf_path="sample_resume/sample_resume.pdf")
         
         # fetch the job descriptions for the target role using the Adzuna API and format them in a prompt-ready way
         target_role = resolve_query(
@@ -170,6 +168,29 @@ async def align_resume_with_job_descriptions(context:dict) -> dict:
             "user_input",
         )
         job_descriptions = await get_job_jds(role=target_role)
+        
+        # fetch the resume info in structured format using the resume extraction tool
+        user_id = context.get("user_id")
+        # fetch the resume info in structured format using the resume extraction tool
+        
+        if not os.path.exists(f"resume/{context.get("user_id")}_resume.pdf"):
+            return {
+                "skill_gap_analysis_query": target_role,
+                "skill_gap_analysis": None,
+                "skill_gap_analysis_items": [],
+                "items": [],
+                "skill_gap_analysis_error": "Failed to fetch the user resume.",
+                "type": "skill_gap_analysis",
+                "skill_gap_analysis_raw": {
+                    "analysis": None,
+                    "target_role": target_role,
+                    "job_descriptions": job_descriptions,
+                },
+            }
+        
+        candidate_profile = await extract_resume_info_from_pdf(pdf_path=f"resume/{user_id}_resume.pdf")
+        
+
         
         if not job_descriptions:
             return {
