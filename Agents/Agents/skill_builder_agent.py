@@ -58,39 +58,35 @@ class SkillBuilderAgent:
         self.chain = chain
 
     async def run(self, context: dict):
-        items = context.get("skill_builder_items") or []
-        skill_builder_error = context.get("skill_builder_error")
+        # items = context.get("skill_builder_items") or []
+        # skill_builder_error = context.get("skill_builder_error")
 
-        if skill_builder_error:
-            skill_builder_status = "error"
-            parsed_response = f"I couldn't build the skill roadmap right now because: {skill_builder_error}"
-        else:
-            response = await self.chain.ainvoke({
-                "user_input": context.get("user_input"),
-                "chat_history": context.get("chat_history"),
-                "goals": context.get("goals"),
-                "filters": context.get("filters"),
-                "skill_builder_items": items,
-            })
-            parsed_response = output_parser.parse(response.content)
-            if items:
-                skill_builder_status = "ok"
-            else:
-                skill_builder_status = "empty"
+        # if skill_builder_error:
+        #     skill_builder_status = "error"
+        #     parsed_response = f"I couldn't build the skill roadmap right now because: {skill_builder_error}"
+        # else:
+        #     response = await self.chain.ainvoke({
+        #         "user_input": context.get("user_input"),
+        #         "chat_history": context.get("chat_history"),
+        #         "goals": context.get("goals"),
+        #         "filters": context.get("filters"),
+        #         "skill_builder_items": items,
+        #     })
+        #     parsed_response = output_parser.parse(response.content)
+        #     if items:
+        #         skill_builder_status = "ok"
+        #     else:
+        #         skill_builder_status = "empty"
 
-        pprint(f"\n\n[SKILL BUILDER AGENT] Response: {parsed_response}\n\n")
+        pprint(f"\n\n[SKILL BUILDER AGENT]\n")
         return {
-            "skill_builder_response": parsed_response,
-            "skill_builder_status": skill_builder_status,
-            "skill_builder_error": skill_builder_error,
-            "recommended_skill_trees": items,
-            "agent_outputs": {
-                "skill_builder_agent": {
-                    "status": skill_builder_status,
-                    "error": skill_builder_error,
-                    "summary": parsed_response,
-                    "items": items,
-                    "type": "skill_tree",
+            "agent_outputs":{
+                "skill_builder_agent":{
+                    "status":"ok",
+                    "error":None,
+                    "summary":"Here's a skill-building roadmap based on the roles and skills I found.",
+                    "items": context.get("skill_builder_items") or [],
+                    "type":"skill_tree",
                 }
             }
         }

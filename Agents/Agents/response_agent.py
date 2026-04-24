@@ -61,8 +61,8 @@ Recommended Kaggle Datasets:
 Recommended Books:
 {recommended_books}
 
-Skill Builder Agent Summary:
-{skill_builder_response}
+Skill Builder Result:
+{skill_builder_result}
 
 
 Roadmap Builder Agent Summary:
@@ -289,7 +289,20 @@ class ResponseAgent:
                 
             print(f"\n\n[RESPONSE AGENT] Prepared Open Library books text:\n{books_text}\n\n")
         # ===================================================================================================================================
-        # print(f"line:241")
+        print(f"line:292")
+        # ==================================================================== Skill Builder items ============================================
+        skill_builder_cache = tool_cache.get_full(user_id=context.get("user_id"), tool_id="fetch_skill_tree") or {}
+        print(f"\nline:295 skill_builder_cache: {skill_builder_cache}\n")
+        skills = skill_builder_cache.get("result").get("items")[0] or [] if skill_builder_cache else []
+        skill_builder_text = ""
+        if skills:
+            for i,skill in enumerate(skills.get("skills"),start=1):
+                skill_builder_text += (
+                    f"{i}. Skill: {skill.get('skill')}\n"
+                    f"     Demand:{skill.get("demand",1)}\n"
+                )
+            print(f"\n\n[RESPONSE AGENT] Prepared skill builder text:\n{skill_builder_text}\n\n")
+        # ===================================================================================================================================
         # roadmap_resources_text = self._build_roadmap_resources_text(context)
         # print(f"line:243")
         response = await self.chain.ainvoke({
@@ -302,7 +315,7 @@ class ResponseAgent:
             "recommended_kaggle_notebooks": notebooks_text or "None",
             "recommended_kaggle_datasets": dataset_text or "None",
             "recommended_books": books_text or "None",
-            "skill_builder_response":context.get("skill_builder_response") or None,
+            "skill_builder_result": skill_builder_text or "None",
             "roadmap_response":context.get("roadmap_response") or None,
             "roadmap_resources": "None",
             "skill_gap_analysis_summary": context.get("skill_gap_analyzer_response") or "None",

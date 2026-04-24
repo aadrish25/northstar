@@ -31,7 +31,7 @@ Your job:
 5. Choose correct agents
 
 AGENTS:
-- skill_builder_agent → for prioritized skills needed for a target job role
+- skill_builder_agent → for prioritized skills needed for a target job role,user wants to build a skill tree, or know the required skills for a job role
 - skill_gap_analyzer_agent → for comparing a user's resume/profile against a target job role and identifying matched skills, missing skills, languages, project gaps, or certification gaps
 - roadmap_builder_agent → for a structured learning roadmap, step-by-step progression, or curated roadmap resources for a target role
 
