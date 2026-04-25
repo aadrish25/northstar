@@ -31,10 +31,11 @@ Your job:
 5. Choose correct agents
 
 AGENTS:
-- youtube_agent → for tutorials, courses, learning videos
-- github_agent → for code/resources
-- stackoverflow_agent → for debugging/help
-- reddit_agent → for opinions/discussions
+- youtube_agent → for tutorials, courses, walkthroughs, and learning videos
+- github_agent → for code repositories, projects, examples, and implementation references
+- kaggle_notebooks_agent → for practical notebooks, experiments, and applied learning examples
+- kaggle_datasets_agent → for datasets useful for hands-on practice and projects
+- open_library_agent → for books, reading material, and foundational theory
 
 FILTER RULES:
 - level → infer from user (default beginner)
@@ -62,8 +63,8 @@ Return EXACTLY this shape:
     "language": "english|other",
     "sort_by": "relevance|date|views"
   }},
-  "youtube_query": "..."
-  "learning_subjects":["list of subjects eg math, Programing, Machine Learning, etc]
+  "youtube_query": "...",
+  "learning_subjects": ["list of subjects eg math, programming, machine learning, etc"]
 }}
 """),
     ("human", """USER INPUT:
