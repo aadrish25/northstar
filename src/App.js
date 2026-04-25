@@ -1,70 +1,184 @@
-import { useState, useEffect, useRef } from "react";
+import { useState,useEffect,useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github.css";
 
-/* ---------------- VIEW CONFIG ---------------- */
+const API="http://localhost:5000";
+const WS="ws://localhost:5000";
 
-const VIEW_CONFIG = {
-  chat:{label:"💬 Chat",apiType:null},
-  articles:{label:"📄 Articles",apiType:"article"},
-  videos:{label:"🎥 Videos",apiType:"video"},
-  books:{label:"📚 Books",apiType:"book"},
-  datasets:{label:"🗂 Datasets",apiType:"dataset"},
-  notebooks:{label:"📓 Notebooks",apiType:"notebook"},
-  github:{label:"💻 GitHub Repos",apiType:"github_repo"},
-  skillTrees:{label:"🌱 Skill Trees",apiType:"skill_tree"},
-  roadmaps:{label:"🛣 Roadmaps",apiType:"roadmap"},
-  resources:{label:"📚 Resources",apiType:"resource"}
+const VIEW_CONFIG={
+chat:{label:"💬 Chat",apiType:null},
+articles:{label:"📄 Articles",apiType:"article"},
+videos:{label:"🎥 Videos",apiType:"video"},
+books:{label:"📚 Books",apiType:"book"},
+datasets:{label:"🗂 Datasets",apiType:"dataset"},
+notebooks:{label:"📓 Notebooks",apiType:"notebook"},
+github:{label:"💻 GitHub Repos",apiType:"github_repo"},
+skillTrees:{label:"🌱 Skill Trees",apiType:"skill_tree"},
+roadmaps:{label:"🛣 Roadmaps",apiType:"roadmap"},
+resources:{label:"📚 Resources",apiType:"resource"}
 };
 
 export default function App(){
 
 const [username,setUsername]=useState("");
-const [loggedIn,setLoggedIn]=useState(false);
+const [password,setPassword]=useState("demo123");
+const [token,setToken]=useState(
+localStorage.getItem("token")||""
+);
+
+const [loggedIn,setLoggedIn]=useState(
+!!localStorage.getItem("token")
+);
 
 const [view,setView]=useState("chat");
 
 const [messages,setMessages]=useState([]);
 const [thinking,setThinking]=useState([]);
 const [input,setInput]=useState("");
-const [showThinking]=useState(true);
-const [isTyping,setIsTyping]=useState(false);
-const [connected,setConnected]=useState(false);
 
+const [connected,setConnected]=useState(false);
 const [resources,setResources]=useState([]);
 const [loadingResources,setLoadingResources]=useState(false);
 
-/* ---------- Resume upload ---------- */
-
-const [uploadingResume,setUploadingResume]=useState(false);
-const [uploadMessage,setUploadMessage]=useState("");
-const fileInputRef=useRef(null);
-
-/* ---------- Voice ---------- */
+const [loginError,setLoginError]=useState("");
 
 const [speechSupported,setSpeechSupported]=useState(false);
 const [isRecording,setIsRecording]=useState(false);
 
-const recognitionRef=useRef(null);
-
-/* ---------- refs ---------- */
+const [uploadingResume,setUploadingResume]=useState(false);
+const [uploadMessage,setUploadMessage]=useState("");
 
 const wsRef=useRef(null);
-const bottomRef=useRef(null);
 const inputRef=useRef(null);
+const bottomRef=useRef(null);
+const recognitionRef=useRef(null);
+const fileInputRef=useRef(null);
 
 
-/* ---------------- WEBSOCKET ---------------- */
+/* ---------------- helpers ---------------- */
+
+const authHeaders=()=>({
+Authorization:`Bearer ${token}`
+});
+
+
+/* ---------------- login ---------------- */
+
+const login=async()=>{
+
+try{
+
+setLoginError("");
+
+const res=await fetch(
+`${API}/login`,
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+user_id:username,
+password
+})
+}
+);
+
+const data=await res.json();
+
+if(!data.success){
+setLoginError(
+data.message || "Login failed"
+);
+return;
+}
+
+localStorage.setItem(
+"token",
+data.token
+);
+
+localStorage.setItem(
+"user_id",
+data.user_id
+);
+
+setToken(data.token);
+setUsername(data.user_id);
+setLoggedIn(true);
+
+}catch(e){
+console.error(e);
+setLoginError(
+"Login failed"
+);
+}
+
+};
+
+
+const logout=async()=>{
+
+try{
+
+await fetch(
+`${API}/logout`,
+{
+method:"POST",
+headers:authHeaders()
+}
+);
+
+}catch(e){
+console.error(e);
+}
+
+localStorage.removeItem(
+"token"
+);
+localStorage.removeItem(
+"user_id"
+);
+
+setLoggedIn(false);
+setToken("");
+setMessages([]);
+};
+
+
+
+/* restore user */
 
 useEffect(()=>{
 
-if(!loggedIn || !username) return;
+const u=
+localStorage.getItem(
+"user_id"
+);
+
+if(u){
+setUsername(u);
+}
+
+},[]);
+
+
+
+/* ---------------- websocket ---------------- */
+
+useEffect(()=>{
+
+if(
+!loggedIn||
+!username||
+!token
+) return;
 
 const ws=
 new WebSocket(
-`ws://localhost:5000/ws/${username}`
+`${WS}/ws/${username}?token=${token}`
 );
 
 wsRef.current=ws;
@@ -91,31 +205,28 @@ event.data
 );
 
 if(data.think){
-setThinking(prev=>[
-...prev,
+setThinking(
+p=>[
+...p,
 data.think
-]);
+]
+);
 }
 
 if(data.message){
-
-setMessages(prev=>[
-...prev,
+setMessages(
+p=>[
+...p,
 {
 sender:"server",
 text:data.message
 }
-]);
-
-setIsTyping(false);
-
+]
+);
 }
 
 }catch(e){
-console.error(
-"WS parse error",
-e
-);
+console.error(e);
 }
 
 };
@@ -126,95 +237,80 @@ ws.close();
 
 },[
 loggedIn,
-username
+username,
+token
 ]);
 
 
 
-/* ---------------- SPEECH ---------------- */
+/* ---------------- speech ---------------- */
 
 useEffect(()=>{
 
-const SpeechRecognition=
+const SR=
 window.SpeechRecognition||
 window.webkitSpeechRecognition;
 
-if(!SpeechRecognition){
+if(!SR){
 setSpeechSupported(false);
 return;
 }
 
 setSpeechSupported(true);
 
-const recognition=
-new SpeechRecognition();
+const r=
+new SR();
 
-recognition.continuous=false;
-recognition.interimResults=false;
-recognition.lang="en-US";
+r.continuous=false;
+r.interimResults=false;
 
-recognition.onstart=()=>{
+r.onstart=()=>{
 setIsRecording(true);
 };
 
-recognition.onresult=(event)=>{
+r.onend=()=>{
+setIsRecording(false);
+};
 
-try{
+r.onresult=(event)=>{
 
-let text="";
+let txt="";
 
 for(
 let i=0;
 i<event.results.length;
 i++
 ){
-
 if(
 event.results[i].isFinal
 ){
-text+=
+txt+=
 event.results[i][0]
 .transcript;
 }
-
 }
 
-if(text.trim()){
-
+if(
+txt.trim()
+){
 setInput(prev=>
 prev
-? prev+" "+text.trim()
-: text.trim()
+? prev+" "+txt.trim()
+: txt.trim()
 );
-
-}
-
-}catch(e){
-console.error(e);
 }
 
 };
 
-recognition.onerror=(e)=>{
-console.error(e);
-setIsRecording(false);
-};
-
-recognition.onend=()=>{
-setIsRecording(false);
-};
-
-recognitionRef.current=
-recognition;
+recognitionRef.current=r;
 
 return()=>{
 try{
-recognition.stop();
+r.stop();
 }catch{}
 };
 
 },[]);
-
 
 
 const toggleRecording=()=>{
@@ -223,9 +319,12 @@ if(
 !recognitionRef.current
 )return;
 
-if(isRecording){
+if(
+isRecording
+){
 recognitionRef.current.stop();
-}else{
+}
+else{
 try{
 recognitionRef.current.start();
 }catch(e){
@@ -237,166 +336,41 @@ console.error(e);
 
 
 
-/* ------------ Resume Upload ------------ */
-
-const openResumePicker=()=>{
-if(fileInputRef.current){
-fileInputRef.current.click();
-}
-};
-
-const handleResumeUpload=
-async(e)=>{
-
-try{
-
-const file=
-e.target.files?.[0];
-
-if(!file) return;
-
-setUploadMessage("");
-
-if(
-file.type!=="application/pdf"
-){
-setUploadMessage(
-"Only PDF files allowed"
-);
-return;
-}
-
-if(
-file.size >
-5*1024*1024
-){
-setUploadMessage(
-"File must be under 5 MB"
-);
-return;
-}
-
-setUploadingResume(true);
-
-const formData=
-new FormData();
-
-formData.append(
-"file",
-file
-);
-
-const res=
-await fetch(
-`http://localhost:5000/upload_resume/${username}`,
-{
-method:"POST",
-body:formData
-}
-);
-
-const data=
-await res.json();
-
-if(data.success){
-setUploadMessage(
-"Resume uploaded successfully"
-);
-}else{
-setUploadMessage(
-data.message||
-"Upload failed"
-);
-}
-
-}catch(e){
-
-console.error(e);
-
-setUploadMessage(
-"Upload failed"
-);
-
-}
-finally{
-setUploadingResume(false);
-
-if(fileInputRef.current){
-fileInputRef.current.value="";
-}
-}
-
-};
-
-
-
-/* ---------------- SCROLL ---------------- */
-
-useEffect(()=>{
-bottomRef.current?.
-scrollIntoView({
-behavior:"smooth"
-});
-},[
-messages,
-isTyping
-]);
-
-
-
-/* ---------------- FOCUS ---------------- */
-
-useEffect(()=>{
-
-if(
-!isRecording &&
-document.activeElement
-!==inputRef.current
-){
-inputRef.current?.focus();
-}
-
-},[
-input,
-isRecording
-]);
-
-
-
-/* ---------------- SEND ---------------- */
+/* ---------------- send ---------------- */
 
 const sendMessage=()=>{
 
-if(!input.trim())
-return;
+if(
+!input.trim()
+)return;
 
 const ws=
 wsRef.current;
 
 if(
-!ws ||
-ws.readyState
-!==WebSocket.OPEN
-){
-return;
-}
+!ws||
+ws.readyState!==1
+)return;
 
-setThinking([]);
-setIsTyping(true);
+const payload={
+message:input
+};
 
 ws.send(
-JSON.stringify({
-message:input
-})
+JSON.stringify(
+payload
+)
 );
 
-setMessages(prev=>[
-...prev,
+setMessages(
+p=>[
+...p,
 {
 sender:"user",
 text:input
 }
-]);
+]
+);
 
 setInput("");
 
@@ -404,15 +378,17 @@ setInput("");
 
 
 
-/* ---------------- FETCH ---------------- */
+/* ---------------- resources ---------------- */
 
 const fetchResources=
 async()=>{
 
 const apiType=
-VIEW_CONFIG[view]?.apiType;
+VIEW_CONFIG[view]
+?.apiType;
 
-if(!apiType) return;
+if(!apiType)
+return;
 
 setLoadingResources(
 true
@@ -422,9 +398,10 @@ try{
 
 const res=
 await fetch(
-`http://localhost:5000/get_resource_by_type/${username}/${apiType}`,
+`${API}/get_resource_by_type/${username}/${apiType}`,
 {
-method:"POST"
+method:"POST",
+headers:authHeaders()
 }
 );
 
@@ -448,7 +425,9 @@ false
 
 
 useEffect(()=>{
-if(view!=="chat"){
+if(
+view!=="chat"
+){
 fetchResources();
 }
 },[view]);
@@ -458,15 +437,15 @@ const archiveResource=
 async(id)=>{
 
 await fetch(
-`http://localhost:5000/update_resource_status/${username}/${id}`,
+`${API}/update_resource_status/${username}/${id}`,
 {
 method:"POST",
 headers:{
+...authHeaders(),
 "Content-Type":
 "application/json"
 },
-body:
-JSON.stringify({
+body:JSON.stringify({
 status:"archived"
 })
 }
@@ -476,24 +455,24 @@ setResources(
 prev=>
 prev.filter(
 r=>
-(
-r.id||
+(r.id||
 r._id||
-r.resource_id
-)!==id
+r.resource_id)!==id
 )
 );
 
 };
 
 
+
 const deleteResource=
 async(id)=>{
 
 await fetch(
-`http://localhost:5000/delete_resource/${username}/${id}`,
+`${API}/delete_resource/${username}/${id}`,
 {
-method:"DELETE"
+method:"DELETE",
+headers:authHeaders()
 }
 );
 
@@ -501,11 +480,9 @@ setResources(
 prev=>
 prev.filter(
 r=>
-(
-r.id||
+(r.id||
 r._id||
-r.resource_id
-)!==id
+r.resource_id)!==id
 )
 );
 
@@ -513,16 +490,109 @@ r.resource_id
 
 
 
-/* ---------------- LOGIN ---------------- */
+/* ---------------- resume upload ---------------- */
+
+const openResumePicker=()=>{
+fileInputRef.current?.
+click();
+};
+
+
+const handleResumeUpload=
+async(e)=>{
+
+const file=
+e.target.files?.[0];
+
+if(!file) return;
+
+if(
+file.type!=="application/pdf"
+){
+setUploadMessage(
+"PDF only"
+);
+return;
+}
+
+if(
+file.size>
+5*1024*1024
+){
+setUploadMessage(
+"Under 5MB only"
+);
+return;
+}
+
+try{
+
+setUploadingResume(
+true
+);
+
+const fd=
+new FormData();
+
+fd.append(
+"file",
+file
+);
+
+const res=
+await fetch(
+`${API}/upload_resume/${username}`,
+{
+method:"POST",
+headers:authHeaders(),
+body:fd
+}
+);
+
+const data=
+await res.json();
+
+setUploadMessage(
+data.message
+);
+
+}catch(e){
+console.error(e);
+setUploadMessage(
+"Upload failed"
+);
+}
+finally{
+setUploadingResume(
+false
+);
+}
+
+};
+
+
+
+/* ---------------- scroll ---------------- */
+
+useEffect(()=>{
+bottomRef.current?.
+scrollIntoView({
+behavior:"smooth"
+});
+},[messages]);
+
+
+
+/* ---------------- LOGIN SCREEN ---------------- */
 
 if(!loggedIn){
 
 return(
 <div className="min-h-screen flex items-center justify-center bg-gray-100">
-<div className="bg-white p-6 rounded-lg shadow w-[320px] space-y-4">
+<div className="bg-white p-6 rounded shadow w-[340px] space-y-4">
 
 <h1 className="text-lg font-semibold text-center">
-Northstar
+Northstar Login
 </h1>
 
 <input
@@ -532,19 +602,38 @@ setUsername(
 e.target.value
 )
 }
-placeholder="Enter your name"
+placeholder="User ID"
 className="w-full border px-3 py-2 rounded"
 />
 
-<button
-onClick={()=>
-username.trim() &&
-setLoggedIn(true)
+<input
+type="password"
+value={password}
+onChange={e=>
+setPassword(
+e.target.value
+)
 }
+className="w-full border px-3 py-2 rounded"
+/>
+
+{
+loginError &&
+<div className="text-sm text-red-500">
+{loginError}
+</div>
+}
+
+<button
+onClick={login}
 className="w-full bg-black text-white py-2 rounded"
 >
-Continue
+Login
 </button>
+
+<div className="text-xs text-gray-500">
+Demo password: demo123
+</div>
 
 </div>
 </div>
@@ -554,7 +643,7 @@ Continue
 
 
 
-/* ---------------- SIDEBAR ---------------- */
+/* ---------------- Sidebar ---------------- */
 
 const Sidebar=()=>(
 <aside className="w-60 border-r p-4 flex flex-col bg-gray-50">
@@ -567,41 +656,47 @@ Northstar
 Object.entries(
 VIEW_CONFIG
 ).map(
-([key,cfg])=>(
+([k,v])=>(
 <button
-key={key}
+key={k}
 onClick={()=>
-setView(key)
+setView(k)
 }
 className={`w-full text-left px-3 py-2 rounded mb-2 ${
-view===key
-? "bg-gray-200"
-: "hover:bg-gray-200"
+view===k
+?"bg-gray-200"
+:"hover:bg-gray-200"
 }`}
 >
-{cfg.label}
+{v.label}
 </button>
 ))
 }
 
 <button
-onClick={openResumePicker}
-className="w-full text-left px-3 py-2 rounded mt-4 border hover:bg-gray-100"
+onClick={
+openResumePicker
+}
+className="mt-4 border rounded px-3 py-2 text-left"
 >
 📄 Upload Resume
 </button>
 
 <input
-ref={fileInputRef}
 type="file"
-accept="application/pdf,.pdf"
-style={{display:"none"}}
-onChange={handleResumeUpload}
+ref={fileInputRef}
+accept=".pdf"
+style={{
+display:"none"
+}}
+onChange={
+handleResumeUpload
+}
 />
 
 {
 uploadingResume &&
-<div className="text-xs mt-2 text-gray-500">
+<div className="text-xs mt-2">
 Uploading...
 </div>
 }
@@ -613,18 +708,25 @@ uploadMessage &&
 </div>
 }
 
+<button
+onClick={logout}
+className="mt-auto border rounded px-3 py-2"
+>
+Logout
+</button>
+
 </aside>
 );
 
 
 
-/* ---------------- CHAT ---------------- */
+/* ---------------- Chat ---------------- */
 
 const ChatView=()=>(
+
 <div className="flex flex-col h-full">
 
-<div className="px-4 py-2 border-b text-sm flex justify-between">
-
+<div className="px-4 py-2 border-b flex justify-between text-sm">
 <span>
 {
 connected
@@ -635,17 +737,20 @@ connected
 
 {
 speechSupported &&
-<span className="text-xs text-gray-500">
+<button
+onClick={
+toggleRecording
+}
+>
 {
 isRecording
-?"🎙 Recording..."
-:"Mic Ready"
+?"⏹ Stop"
+:"🎤 Mic"
 }
-</span>
+</button>
 }
 
 </div>
-
 
 <div className="flex-1 overflow-y-auto p-4 space-y-3">
 
@@ -660,7 +765,6 @@ m.sender==="user"
 }
 >
 <div className="inline-block bg-gray-100 px-3 py-2 rounded">
-
 {
 m.sender==="user"
 ?m.text
@@ -676,31 +780,14 @@ rehypeHighlight
 {m.text}
 </ReactMarkdown>
 }
-
 </div>
 </div>
 ))
-}
-
-{
-showThinking &&
-thinking.length>0 &&
-<div className="text-xs text-gray-500 border-t pt-2">
-{
-thinking.map(
-(t,i)=>(
-<div key={i}>
-• {t}
-</div>
-))
-}
-</div>
 }
 
 <div ref={bottomRef}/>
 
 </div>
-
 
 <div className="p-3 border-t flex gap-2">
 
@@ -712,37 +799,15 @@ setInput(
 e.target.value
 )
 }
-placeholder="Type or use mic..."
 className="flex-1 border px-3 py-2 rounded"
 onKeyDown={e=>{
 if(
 e.key==="Enter"
 ){
-e.preventDefault();
 sendMessage();
 }
 }}
 />
-
-{
-speechSupported &&
-<button
-onClick={
-toggleRecording
-}
-className={`px-4 rounded border ${
-isRecording
-?"bg-red-500 text-white"
-:"bg-white"
-}`}
->
-{
-isRecording
-?"⏹ Stop"
-:"🎤 Mic"
-}
-</button>
-}
 
 <button
 onClick={sendMessage}
@@ -754,13 +819,15 @@ Send
 </div>
 
 </div>
+
 );
 
 
 
-/* ---------------- CONTENT ---------------- */
+/* ---------------- Content ---------------- */
 
 const ContentView=()=>(
+
 <div className="p-6 space-y-3">
 
 <div className="text-lg font-semibold mb-2">
@@ -791,54 +858,29 @@ r._id||
 r.resource_id||
 i;
 
-const url=
-r.url||
-r.link||
-"#";
-
 return(
 <div
 key={id}
-className="border p-4 rounded relative hover:bg-gray-50 group"
+className="border p-4 rounded group relative"
 >
 
 <a
-href={url}
+href={
+r.url||
+r.link||
+"#"
+}
 target="_blank"
-rel="noopener noreferrer"
-className="font-medium text-blue-600 hover:underline block"
+rel="noreferrer"
+className="font-medium text-blue-600"
 >
 {r.title||"Untitled"}
 </a>
 
 {
-r.channel &&
-<div className="text-xs text-gray-500 mt-1">
-{r.channel}
-</div>
-}
-
-{
 r.description &&
-<div className="text-sm text-gray-500 mt-1">
+<div className="text-sm mt-1 text-gray-500">
 {r.description}
-</div>
-}
-
-{
-r.tags?.length>0 &&
-<div className="flex gap-2 mt-2 flex-wrap">
-{
-r.tags.map(
-(tag,idx)=>(
-<span
-key={idx}
-className="text-xs px-2 py-1 bg-gray-200 rounded"
->
-{tag}
-</span>
-))
-}
 </div>
 }
 
@@ -848,7 +890,7 @@ className="text-xs px-2 py-1 bg-gray-200 rounded"
 onClick={()=>
 archiveResource(id)
 }
-className="text-xs px-2 py-1 border rounded"
+className="text-xs border px-2 py-1 rounded"
 >
 Archive
 </button>
@@ -857,7 +899,7 @@ Archive
 onClick={()=>
 deleteResource(id)
 }
-className="text-xs px-2 py-1 border rounded text-red-600"
+className="text-xs border px-2 py-1 rounded"
 >
 Delete
 </button>
@@ -871,11 +913,10 @@ Delete
 }
 
 </div>
+
 );
 
 
-
-/* ---------------- APP ---------------- */
 
 return(
 <div className="h-screen flex">
